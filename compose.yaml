@@ -1,0 +1,7 @@
+﻿services:
+  lajemacartsapi:
+    image: lajemacartsapi
+    build:
+      context: .
+      dockerfile: LajemacartsApi/Dockerfile
+

@@ -23,6 +23,7 @@ public sealed class E2ETestFixture<TStartup> : WebApplicationFactory<TStartup>, 
   public async Task InitializeAsync()
   {
     await _container.Init();
+    var t = _container.ConnectionString();
     ArtworkDbContext = new ArtworkDbContext(
         new DbContextOptionsBuilder<ArtworkDbContext>().UseNpgsql(_container.ConnectionString()).Options);
   }

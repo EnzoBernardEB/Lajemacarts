@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.targets" />
+
+    <ItemGroup>
+      <PackageReference Include="Npgsql" Version="9.0.3" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\GalleryContext.BusinessLogic\GalleryContext.BusinessLogic.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\lajemacarts-db-ddl.sql" />
+      <EmbeddedResource Include="Resources\lajemacarts-db-ddl.sql" />
+    </ItemGroup>
+
+</Project>

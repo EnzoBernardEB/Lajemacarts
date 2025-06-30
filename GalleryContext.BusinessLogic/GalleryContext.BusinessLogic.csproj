@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Common.targets" />
+
+    <ItemGroup>
+      <ProjectReference Include="..\SharedKernel.Core\SharedKernel.Core.csproj" />
+    </ItemGroup>
+
+</Project>

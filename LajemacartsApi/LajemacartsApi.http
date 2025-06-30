@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:8080
+
+### Obtenir toutes les oeuvres
+GET {{baseUrl}}/api/artworks
+
+### Créer une nouvelle oeuvre
+@name = Coucher de Soleil sur La Jarrie
+@description = Une peinture à l'huile représentant le soleil couchant sur les marais près de La Jarrie. Couleurs chaudes et texture prononcée.
+@artworkTypeId = 1
+@materialIds = 1
+@dimensionL = 70.0
+@dimensionW = 50.0
+@dimensionH = 2.5
+@dimensionUnit = 0
+@weightCategory = 1
+@price = 999.99
+@creationYear = 2024
+
+POST {{baseUrl}}/api/artworks
+Content-Type: application/json
+
+{
+  "name": "{{name}}",
+  "description": "{{description}}",
+  "artworkTypeId": {{artworkTypeId}},
+  "materialIds": [{{materialIds}}],
+  "dimensionL": {{dimensionL}},
+  "dimensionW": {{dimensionW}},
+  "dimensionH": {{dimensionH}},
+  "dimensionUnit": {{dimensionUnit}},
+  "weightCategory": {{weightCategory}},
+  "price": {{price}},
+  "creationYear": {{creationYear}}
+}
+
+###
