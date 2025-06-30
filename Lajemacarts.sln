@@ -1,0 +1,83 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GalleryContext", "GalleryContext", "{F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedKernel.Core", "SharedKernel.Core\SharedKernel.Core.csproj", "{F72073CC-7FC9-48E2-ADF8-587EDB337E60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.BusinessLogic", "GalleryContext.BusinessLogic\GalleryContext.BusinessLogic.csproj", "{C25F6B57-DAE5-460E-B678-D8126FF40DFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.BusinessLogic.UnitTests", "GalleryContext.BusinessLogic.UnitTests\GalleryContext.BusinessLogic.UnitTests.csproj", "{721AE1F9-DCFA-42FE-B924-D85088FF3306}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.SecondaryAdapters", "GalleryContext.SecondaryAdapters\GalleryContext.SecondaryAdapters.csproj", "{9715B654-B9DF-4CDC-B33B-9BF1136001C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.SecondaryAdapters.IntegrationTests", "GalleryContext.SecondaryAdapters.IntegrationTests\GalleryContext.SecondaryAdapters.IntegrationTests.csproj", "{65F32C99-3257-4216-B059-FC3D6289E5C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.PrimaryAdapters", "GalleryContext.PrimaryAdapters\GalleryContext.PrimaryAdapters.csproj", "{48ACD394-BB4D-4A2F-8E96-0A509998F274}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GalleryContext.PrimaryAdapters.EndToEndTests", "GalleryContext.PrimaryAdapters.EndToEndTests\GalleryContext.PrimaryAdapters.EndToEndTests.csproj", "{4B9E3256-12FE-4086-972C-C57D5BEEFF74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LajemacartsApi", "LajemacartsApi\LajemacartsApi.csproj", "{85BCD057-1668-47D0-B853-563953769FC5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D3FC48B5-54F8-4D7D-AF79-B10E5D5F6795}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedKernel.DatabaseTests", "SharedKernel.DatabaseTests\SharedKernel.DatabaseTests.csproj", "{3451B53B-BF36-4134-A332-6D1C2B5F0819}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedKernel", "SharedKernel", "{DED46C0C-C16F-4EE9-A666-B2E778F1CAA4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F72073CC-7FC9-48E2-ADF8-587EDB337E60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F72073CC-7FC9-48E2-ADF8-587EDB337E60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F72073CC-7FC9-48E2-ADF8-587EDB337E60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F72073CC-7FC9-48E2-ADF8-587EDB337E60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C25F6B57-DAE5-460E-B678-D8126FF40DFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C25F6B57-DAE5-460E-B678-D8126FF40DFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C25F6B57-DAE5-460E-B678-D8126FF40DFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C25F6B57-DAE5-460E-B678-D8126FF40DFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{721AE1F9-DCFA-42FE-B924-D85088FF3306}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{721AE1F9-DCFA-42FE-B924-D85088FF3306}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{721AE1F9-DCFA-42FE-B924-D85088FF3306}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{721AE1F9-DCFA-42FE-B924-D85088FF3306}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9715B654-B9DF-4CDC-B33B-9BF1136001C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9715B654-B9DF-4CDC-B33B-9BF1136001C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9715B654-B9DF-4CDC-B33B-9BF1136001C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9715B654-B9DF-4CDC-B33B-9BF1136001C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65F32C99-3257-4216-B059-FC3D6289E5C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65F32C99-3257-4216-B059-FC3D6289E5C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65F32C99-3257-4216-B059-FC3D6289E5C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65F32C99-3257-4216-B059-FC3D6289E5C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48ACD394-BB4D-4A2F-8E96-0A509998F274}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48ACD394-BB4D-4A2F-8E96-0A509998F274}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48ACD394-BB4D-4A2F-8E96-0A509998F274}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48ACD394-BB4D-4A2F-8E96-0A509998F274}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B9E3256-12FE-4086-972C-C57D5BEEFF74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B9E3256-12FE-4086-972C-C57D5BEEFF74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B9E3256-12FE-4086-972C-C57D5BEEFF74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B9E3256-12FE-4086-972C-C57D5BEEFF74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85BCD057-1668-47D0-B853-563953769FC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85BCD057-1668-47D0-B853-563953769FC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85BCD057-1668-47D0-B853-563953769FC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85BCD057-1668-47D0-B853-563953769FC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3451B53B-BF36-4134-A332-6D1C2B5F0819}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3451B53B-BF36-4134-A332-6D1C2B5F0819}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3451B53B-BF36-4134-A332-6D1C2B5F0819}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3451B53B-BF36-4134-A332-6D1C2B5F0819}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C25F6B57-DAE5-460E-B678-D8126FF40DFB} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{721AE1F9-DCFA-42FE-B924-D85088FF3306} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{9715B654-B9DF-4CDC-B33B-9BF1136001C4} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{65F32C99-3257-4216-B059-FC3D6289E5C3} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{48ACD394-BB4D-4A2F-8E96-0A509998F274} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{4B9E3256-12FE-4086-972C-C57D5BEEFF74} = {F55EC6A6-30AB-47A4-B41C-48C832B7AA0A}
+		{F72073CC-7FC9-48E2-ADF8-587EDB337E60} = {DED46C0C-C16F-4EE9-A666-B2E778F1CAA4}
+		{3451B53B-BF36-4134-A332-6D1C2B5F0819} = {DED46C0C-C16F-4EE9-A666-B2E778F1CAA4}
+	EndGlobalSection
+EndGlobal
