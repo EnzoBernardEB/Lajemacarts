@@ -8,72 +8,62 @@ using SharedKernel.Core.Exceptions;
 
 namespace GalleryContext.BusinessLogic.UseCases.AddArtwork;
 
+using GalleryContext.BusinessLogic.Models.ValueObjects;
+
 public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimeProvider dateTimeProvider)
 {
-  private readonly IArtworkRepository _artworkRepository = artworkRepository ?? throw new ArgumentNullException(nameof(artworkRepository));
+    private readonly IArtworkRepository _artworkRepository = artworkRepository ?? throw new ArgumentNullException(nameof(artworkRepository));
 
-  public async Task<Result<ArtworkDto>> ExecuteAsync(AddArtworkCommand command)
-  {
-    var validationErrors = AddArtworkCommandValidator.Validate(command);
-
-    if (validationErrors.Count != 0)
+    public async Task<Result<ArtworkDto>> ExecuteAsync(AddArtworkCommand command)
     {
-      if (validationErrors.Count > 1)
-        return Result<ArtworkDto>.Failure(
-            new Error("Validation.Multiple",
-                string.Join("; ", validationErrors.Select(e => e.Description ?? e.Code))));
+        var nameResult = ArtworkName.Create(command.Name);
+        var descriptionResult = ArtworkDescription.Create(command.Description);
+        var dimensionsResult = Dimensions.Create(command.DimensionL, command.DimensionW, command.DimensionH, command.DimensionUnit);
+        var priceResult = Money.Create(command.Price);
 
-      return validationErrors.First();
+        var validationResults = new List<Result> { nameResult, descriptionResult, dimensionsResult, priceResult };
+        var validationErrors = validationResults.Where(r => r.IsFailure).Select(r => r.Error).ToList();
+
+        if (validationErrors.Any())
+        {
+            return Result<ArtworkDto>.Failure(validationErrors.First());
+        }
+
+        var artworkResult = Artwork.Create(
+            nameResult.Value,
+            descriptionResult.Value,
+            command.ArtworkTypeId,
+            command.MaterialIds,
+            dimensionsResult.Value,
+            command.WeightCategory,
+            priceResult.Value,
+            command.CreationYear,
+            dateTimeProvider.UtcNow
+        );
+
+        if (artworkResult.IsFailure)
+        {
+            return Result<ArtworkDto>.Failure(artworkResult.Error);
+        }
+
+        var savedArtwork = await _artworkRepository.AddAsync(artworkResult.Value);
+
+        var artworkDto = new ArtworkDto(
+            savedArtwork.Id,
+            savedArtwork.Name.Value,
+            savedArtwork.Description.Value,
+            savedArtwork.ArtworkTypeId,
+            new List<int>(savedArtwork.MaterialIds),
+            savedArtwork.Dimensions.Length,
+            savedArtwork.Dimensions.Width,
+            savedArtwork.Dimensions.Height,
+            savedArtwork.Dimensions.Unit,
+            savedArtwork.WeightCategory,
+            savedArtwork.Price.Amount,
+            savedArtwork.CreationYear,
+            savedArtwork.Status.ToString()
+        );
+
+        return Result<ArtworkDto>.Success(artworkDto);
     }
-
-    try
-    {
-      var now = dateTimeProvider.UtcNow;
-      var newArtwork = new Artwork(
-          command.Name,
-          command.Description,
-          command.ArtworkTypeId,
-          command.MaterialIds,
-          command.DimensionL,
-          command.DimensionW,
-          command.DimensionH,
-          command.DimensionUnit,
-          command.WeightCategory,
-          command.Price,
-          command.CreationYear,
-          now,
-          now
-      );
-
-      var savedArtwork = await _artworkRepository.AddAsync(newArtwork);
-
-      var artworkDto = new ArtworkDto(
-          savedArtwork.Id,
-          savedArtwork.Name,
-          savedArtwork.Description,
-          savedArtwork.ArtworkTypeId,
-          new List<int>(savedArtwork.MaterialIds),
-          savedArtwork.DimensionL,
-          savedArtwork.DimensionW,
-          savedArtwork.DimensionH,
-          savedArtwork.DimensionUnit,
-          savedArtwork.WeightCategory,
-          savedArtwork.Price,
-          savedArtwork.CreationYear,
-          savedArtwork.Status.ToString()
-      );
-
-      return Result<ArtworkDto>.Success(artworkDto);
-    }
-    catch (DomainException ex)
-    {
-      return Result<ArtworkDto>.Failure(new Error("Domain.RuleViolation", ex.Message));
-    }
-    catch (Exception ex)
-    {
-      Console.WriteLine($"Unhandled exception in AddArtworkUseCase: {ex}"); // Log l'erreur
-
-      return Result<ArtworkDto>.Failure(new Error("System.Unhandled", "An unexpected error occurred."));
-    }
-  }
 }

@@ -44,9 +44,9 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
       1931
     );
     
-    var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/Artwork", command);
+    var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/Artworks", command);
     
-    addArtworkResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    addArtworkResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
     using var scope = _fixture.Server.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
