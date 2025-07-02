@@ -57,21 +57,21 @@ public class Artwork
     }
 
     public static Artwork Hydrate(
-        int id, string name, string description, int artworkTypeId, List<int> materialIds,
-        decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
-        WeightCategory weightCategory, decimal price, int creationYear,
-        ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt)
+            int id, string name, string description, int artworkTypeId, List<int> materialIds,
+            decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
+            WeightCategory weightCategory, decimal price, int creationYear,
+            ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt)
     {
         return new Artwork
         {
             Id = id,
-            Name = ArtworkName.Create(name).Value,
-            Description = ArtworkDescription.Create(description).Value,
+            Name = ArtworkName.Hydrate(name),
+            Description = ArtworkDescription.Hydrate(description),
             ArtworkTypeId = artworkTypeId,
             MaterialIds = materialIds,
-            Dimensions = Dimensions.Create(dimensionL, dimensionW, dimensionH, dimensionUnit).Value,
+            Dimensions = Dimensions.Hydrate(dimensionL, dimensionW, dimensionH, dimensionUnit),
             WeightCategory = weightCategory,
-            Price = Money.Create(price).Value,
+            Price = Money.Hydrate(price),
             CreationYear = creationYear,
             Status = status,
             IsDeleted = isDeleted,
@@ -79,7 +79,6 @@ public class Artwork
             UpdatedAt = updatedAt
         };
     }
-
     public int Id { get; private set; }
     public ArtworkName Name { get; private set; }
     public ArtworkDescription Description { get; private set; }

@@ -35,7 +35,10 @@ public sealed class ArtworkName : ValueObject
 
         return Result<ArtworkName>.Success(new ArtworkName(name));
     }
-
+    internal static ArtworkName Hydrate(string name)
+    {
+        return new ArtworkName(name);
+    }
     public override IEnumerable<object> GetAtomicValues()
     {
         yield return Value;

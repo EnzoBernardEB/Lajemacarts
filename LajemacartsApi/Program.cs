@@ -41,12 +41,13 @@ builder.Services.AddSwaggerGen(options =>
     Description = "API pour la gestion d'oeuvres d'art (Lajemacarts)",
   });
 });
-
-var app = builder.Build();
+var connectionString = builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase");
 
 builder.Services.AddDbContext<ArtworkDbContext>(
-    options => options.UseNpgsql(builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase"))
+    options => options.UseNpgsql(connectionString)
 );
+var app = builder.Build();
+
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
@@ -66,10 +67,6 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseCors(myAllowSpecificOrigins);
-
-// 6. Authentification et Autorisation (décommenter si/quand configuré)
-// app.UseAuthentication();
-// app.UseAuthorization();
 
 app.MapControllers();
 

@@ -22,7 +22,10 @@ public sealed class Money : ValueObject
 
         return Result<Money>.Success(new Money(amount));
     }
-
+    internal static Money Hydrate(decimal amount)
+    {
+        return new Money(amount);
+    }
     public override IEnumerable<object> GetAtomicValues()
     {
         yield return Amount;

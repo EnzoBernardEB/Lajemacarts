@@ -22,6 +22,11 @@ public sealed class ArtworkDescription : ValueObject
 
         return Result<ArtworkDescription>.Success(new ArtworkDescription(description));
     }
+    internal static ArtworkDescription Hydrate(string value)
+    {
+        return new ArtworkDescription(value);
+    }
+    
 
     public override IEnumerable<object> GetAtomicValues()
     {

@@ -29,7 +29,10 @@ public sealed class Dimensions : ValueObject
 
         return Result<Dimensions>.Success(new Dimensions(length, width, height, unit));
     }
-
+    internal static Dimensions Hydrate(decimal length, decimal width, decimal height, DimensionUnit unit)
+    {
+        return new Dimensions(length, width, height, unit);
+    }
     public override IEnumerable<object> GetAtomicValues()
     {
         yield return Length;
