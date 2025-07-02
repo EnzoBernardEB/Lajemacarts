@@ -1,98 +1,147 @@
-﻿using GalleryContext.BusinessLogic.Models.Enums;
+﻿using System;
+using System.Collections.Generic;
+using GalleryContext.BusinessLogic.Errors;
+using GalleryContext.BusinessLogic.Models.Enums;
+using SharedKernel.Core.Primitives;
 
 namespace GalleryContext.BusinessLogic.Models;
 
+using SharedKernel.Core.Primitives;
+using GalleryContext.BusinessLogic.Models.ValueObjects;
+
 public class Artwork
 {
-  private Artwork()
-  {
-    Name = string.Empty;
-    Description = string.Empty;
-    MaterialIds = new List<int>();
-  }
-
-  public Artwork(
-      string name, string description, int artworkTypeId, List<int> materialIds,
-      decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
-      WeightCategory weightCategory, decimal price, int creationYear, DateTime createdDate, DateTime updateDate)
-  {
-    Name = name;
-    Description = description;
-    ArtworkTypeId = artworkTypeId;
-    MaterialIds = materialIds;
-    DimensionL = dimensionL;
-    DimensionW = dimensionW;
-    DimensionH = dimensionH;
-    DimensionUnit = dimensionUnit;
-    WeightCategory = weightCategory;
-    Price = price;
-    CreationYear = creationYear;
-    CreatedAt = createdDate;
-    UpdatedAt = updateDate;
-
-    Status = ArtworkStatus.Draft;
-    IsDeleted = false;
-  }
-  
-  public static Artwork Hydrate(
-    int id, string name, string description, int artworkTypeId, List<int> materialIds,
-    decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
-    WeightCategory weightCategory, decimal price, int creationYear,
-    ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt)
-  {
-    var artwork = new Artwork
+    private Artwork()
     {
-      Id = id,
-      Name = name,
-      Description = description,
-      ArtworkTypeId = artworkTypeId,
-      MaterialIds = materialIds,
-      DimensionL = dimensionL,
-      DimensionW = dimensionW,
-      DimensionH = dimensionH,
-      DimensionUnit = dimensionUnit,
-      WeightCategory = weightCategory,
-      Price = price,
-      CreationYear = creationYear,
-      Status = status,
-      IsDeleted = isDeleted,
-      CreatedAt = createdAt,
-      UpdatedAt = updatedAt
-    };
+        Name = null!;
+        Description = null!;
+        Dimensions = null!;
+        Price = null!;
+        MaterialIds = new List<int>();
+    }
 
-    return artwork;
-  }
+    public static Result<Artwork> Create(
+        ArtworkName name,
+        ArtworkDescription description,
+        int artworkTypeId,
+        List<int> materialIds,
+        Dimensions dimensions,
+        WeightCategory weightCategory,
+        Money price,
+        int creationYear,
+        DateTime createdDate)
+    {
+        var validationResult = Validate(materialIds);
+        if (validationResult.IsFailure)
+        {
+            return Result<Artwork>.Failure(validationResult.Error);
+        }
 
+        var artwork = new Artwork
+        {
+            Name = name,
+            Description = description,
+            ArtworkTypeId = artworkTypeId,
+            MaterialIds = materialIds,
+            Dimensions = dimensions,
+            WeightCategory = weightCategory,
+            Price = price,
+            CreationYear = creationYear,
+            Status = ArtworkStatus.Draft,
+            IsDeleted = false,
+            CreatedAt = createdDate,
+            UpdatedAt = createdDate
+        };
 
-  public int Id { get; set; }
+        return Result<Artwork>.Success(artwork);
+    }
 
-  public string Name { get; private set; }
+    public static Artwork Hydrate(
+            int id, string name, string description, int artworkTypeId, List<int> materialIds,
+            decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
+            WeightCategory weightCategory, decimal price, int creationYear,
+            ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt)
+    {
+        return new Artwork
+        {
+            Id = id,
+            Name = ArtworkName.Hydrate(name),
+            Description = ArtworkDescription.Hydrate(description),
+            ArtworkTypeId = artworkTypeId,
+            MaterialIds = materialIds,
+            Dimensions = Dimensions.Hydrate(dimensionL, dimensionW, dimensionH, dimensionUnit),
+            WeightCategory = weightCategory,
+            Price = Money.Hydrate(price),
+            CreationYear = creationYear,
+            Status = status,
+            IsDeleted = isDeleted,
+            CreatedAt = createdAt,
+            UpdatedAt = updatedAt
+        };
+    }
+    public int Id { get; private set; }
+    public ArtworkName Name { get; private set; }
+    public ArtworkDescription Description { get; private set; }
+    public int ArtworkTypeId { get; private set; }
+    public List<int> MaterialIds { get; private set; }
+    public Dimensions Dimensions { get; private set; }
+    public WeightCategory WeightCategory { get; private set; }
+    public Money Price { get; private set; }
+    public int CreationYear { get; private set; }
+    public ArtworkStatus Status { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
 
-  public string Description { get; private set; }
+    public void Publish(DateTime updateDate)
+    {
+        Status = ArtworkStatus.InStock;
+        UpdatedAt = updateDate;
+    }
 
-  public int ArtworkTypeId { get; private set; }
+    public void Archive(DateTime updateDate)
+    {
+        Status = ArtworkStatus.Archived;
+        UpdatedAt = updateDate;
+    }
 
-  public List<int> MaterialIds { get; private set; }
+    public void MarkAsDeleted(DateTime updateDate)
+    {
+        IsDeleted = true;
+        UpdatedAt = updateDate;
+    }
 
-  public decimal DimensionL { get; private set; }
+    public Result UpdateInfo(
+        ArtworkName name,
+        ArtworkDescription description,
+        List<int> materialIds,
+        Dimensions dimensions,
+        WeightCategory weightCategory,
+        Money price,
+        int creationYear,
+        DateTime updateDate)
+    {
+        var validationResult = Validate(materialIds);
+        if (validationResult.IsFailure)
+        {
+            return validationResult;
+        }
 
-  public decimal DimensionW { get; private set; }
+        Name = name;
+        Description = description;
+        MaterialIds = materialIds;
+        Dimensions = dimensions;
+        WeightCategory = weightCategory;
+        Price = price;
+        CreationYear = creationYear;
+        UpdatedAt = updateDate;
 
-  public decimal DimensionH { get; private set; }
+        return Result.Success();
+    }
 
-  public DimensionUnit DimensionUnit { get; private set; }
+    private static Result Validate(IReadOnlyCollection<int> materialIds)
+    {
+        return materialIds.Count == 0 ? Result.Failure(DomainErrors.Artwork.MaterialRequired) : Result.Success();
 
-  public WeightCategory WeightCategory { get; private set; }
-
-  public decimal Price { get; private set; }
-
-  public int CreationYear { get; private set; }
-
-  public ArtworkStatus Status { get; internal set; }
-
-  public bool IsDeleted { get; internal set; }
-
-  public DateTime CreatedAt { get; internal set; }
-
-  public DateTime UpdatedAt { get; internal set; }
+    }
 }

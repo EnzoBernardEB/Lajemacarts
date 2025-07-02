@@ -5,55 +5,87 @@ namespace GalleryContext.SecondaryAdapters.Repositories.Fakes;
 
 public class FakeArtworkRepository : IArtworkRepository
 {
-  private readonly Dictionary<int, Artwork> _artworks = new Dictionary<int, Artwork>();
-  private int _nextId = 1;
+    private readonly Dictionary<int, Artwork> _artworks = new();
 
-  public Task<Artwork> AddAsync(Artwork artwork)
-  {
-    if (artwork.Id == 0)
+    public Task<Artwork> AddAsync(Artwork artwork)
     {
-      artwork.Id = _nextId++;
+        var newId = _artworks.Keys.Any() ? _artworks.Keys.Max() + 1 : 1;
+
+        var artworkWithId = Artwork.Hydrate(
+            newId,
+            artwork.Name.Value,
+            artwork.Description.Value,
+            artwork.ArtworkTypeId,
+            artwork.MaterialIds,
+            artwork.Dimensions.Length,
+            artwork.Dimensions.Width,
+            artwork.Dimensions.Height,
+            artwork.Dimensions.Unit,
+            artwork.WeightCategory,
+            artwork.Price.Amount,
+            artwork.CreationYear,
+            artwork.Status,
+            artwork.IsDeleted,
+            artwork.CreatedAt,
+            artwork.UpdatedAt
+        );
+
+        _artworks.Add(newId, artworkWithId);
+        return Task.FromResult(artworkWithId);
     }
-    else
+
+    public Task<IEnumerable<Artwork>> GetAllAsync()
     {
-      if (_artworks.ContainsKey(artwork.Id))
-        _artworks[artwork.Id] = artwork;
-      else if (artwork.Id >= _nextId) _nextId = artwork.Id + 1;
+        return Task.FromResult<IEnumerable<Artwork>>(_artworks.Values.ToList());
     }
 
-
-    _artworks[artwork.Id] = artwork;
-
-    return Task.FromResult(artwork);
-  }
-  public Task<IEnumerable<Artwork>> GetAllAsync()
-  {
-    return Task.FromResult<IEnumerable<Artwork>>(_artworks.Values.ToList());
-  }
-  public Task DeleteAsync(int id)
-  {
-    throw new NotImplementedException();
-  }
-  public Task UpdateAsync(Artwork artwork)
-  {
-    throw new NotImplementedException();
-  }
-
-  public Task<Artwork?> GetByIdAsync(int id)
-  {
-    _artworks.TryGetValue(id, out var artwork);
-
-    return Task.FromResult(artwork);
-  }
-
-  public void FeedWith(params Artwork[] artworks)
-  {
-    foreach (var artwork in artworks)
+    public Task DeleteAsync(int id)
     {
-      if (artwork.Id == 0)
-        artwork.Id = _nextId++;
-      else if (artwork.Id >= _nextId) _nextId = artwork.Id + 1;
-      _artworks[artwork.Id] = artwork;
+        _artworks.Remove(id);
+        return Task.CompletedTask;
     }
-  }
+
+    public Task UpdateAsync(Artwork artwork)
+    {
+        if (_artworks.ContainsKey(artwork.Id))
+        {
+            _artworks[artwork.Id] = artwork;
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<Artwork?> GetByIdAsync(int id)
+    {
+        _artworks.TryGetValue(id, out var artwork);
+        return Task.FromResult(artwork);
+    }
+
+    public void FeedWith(params Artwork[] artworks)
+    {
+        var nextId = (_artworks.Keys.Any() ? _artworks.Keys.Max() : 0) + 1;
+        foreach (var artwork in artworks)
+        {
+            var idToSet = artwork.Id == 0 ? nextId++ : artwork.Id;
+
+            var hydratedArtwork = Artwork.Hydrate(
+                idToSet,
+                artwork.Name.Value,
+                artwork.Description.Value,
+                artwork.ArtworkTypeId,
+                artwork.MaterialIds,
+                artwork.Dimensions.Length,
+                artwork.Dimensions.Width,
+                artwork.Dimensions.Height,
+                artwork.Dimensions.Unit,
+                artwork.WeightCategory,
+                artwork.Price.Amount,
+                artwork.CreationYear,
+                artwork.Status,
+                artwork.IsDeleted,
+                artwork.CreatedAt,
+                artwork.UpdatedAt
+            );
+            _artworks[hydratedArtwork.Id] = hydratedArtwork;
+        }
+    }
 }
