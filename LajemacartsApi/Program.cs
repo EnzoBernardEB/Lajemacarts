@@ -7,6 +7,7 @@ using GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -24,14 +25,6 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
       });
 });
-
-// var connectionString = builder.Configuration.GetConnectionString("GalleryConnection");
-// if (string.IsNullOrEmpty(connectionString))
-// {
-//   throw new InvalidOperationException("Connection string 'GalleryConnection' not found.");
-// }
-// builder.Services.AddDbContext<ArtworkDbContext>(options =>
-//     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IArtworkRepository, EfArtworkRepository>();
 
@@ -51,7 +44,9 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-
+builder.Services.AddDbContext<ArtworkDbContext>(
+    options => options.UseNpgsql(builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase"))
+);
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
@@ -60,19 +55,6 @@ if (app.Environment.IsDevelopment())
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Lajemacarts API v1");
     options.RoutePrefix = string.Empty;
   });
-
-  try
-  {
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
-    Console.WriteLine("Applying database migrations...");
-    dbContext.Database.Migrate();
-    Console.WriteLine("Database migrations applied successfully.");
-  }
-  catch (Exception ex)
-  {
-    Console.Error.WriteLine($"An error occurred while migrating the database: {ex.Message}");
-  }
 }
 else
 {

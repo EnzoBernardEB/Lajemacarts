@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:8080
 
 ### Obtenir toutes les oeuvres
-GET {{baseUrl}}/api/artworks
+GET {{baseUrl}}/api/v1/artworks
 
 ### Créer une nouvelle oeuvre
 @name = Coucher de Soleil sur La Jarrie
@@ -16,7 +16,7 @@ GET {{baseUrl}}/api/artworks
 @price = 999.99
 @creationYear = 2024
 
-POST {{baseUrl}}/api/artworks
+POST {{baseUrl}}/api/v1/artworks
 Content-Type: application/json
 
 {

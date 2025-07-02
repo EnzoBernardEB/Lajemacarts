@@ -21,7 +21,6 @@ public class PgTestContainerRunner
     {
         await Container.StartAsync();
         await WaitForConnectionAsync();
-        await RunDdlScriptToDatabase();
     }
 
     public async Task Down()

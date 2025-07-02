@@ -1,9 +1,14 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using GalleryContext.BusinessLogic.Gateways.Dtos;
+using GalleryContext.BusinessLogic.Gateways.Providers;
+using GalleryContext.BusinessLogic.Models;
 using GalleryContext.BusinessLogic.Models.Enums;
+using GalleryContext.BusinessLogic.Models.ValueObjects;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
 using GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
+using GalleryContext.SecondaryAdapters.Repositories.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -44,7 +49,7 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
       1931
     );
     
-    var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/Artworks", command);
+    var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/artworks", command);
     
     addArtworkResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
