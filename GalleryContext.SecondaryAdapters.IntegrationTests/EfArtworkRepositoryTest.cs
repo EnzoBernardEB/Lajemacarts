@@ -77,7 +77,7 @@ public class EfArtworkRepositoryTest(GalleryIntegrationTestFixture fixture)
         retrievedArtwork.Should().NotBeNull();
     
         retrievedArtwork!.Id.Should().Be(artworkInDatabase.Id); 
-        retrievedArtwork.Name.Value.Should().Be(artworkInDatabase.Name.Value);
+        retrievedArtwork.Name!.Value.Should().Be(artworkInDatabase.Name.Value);
     }
 
     [Fact]

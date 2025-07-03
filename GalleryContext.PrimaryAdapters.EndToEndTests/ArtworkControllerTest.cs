@@ -64,6 +64,6 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
 
     artworkInDb.Should().NotBeNull();
     artworkInDb!.Name.Should().Be(command.Name);
-    artworkInDb.Price.Should().Be(command.Price);
+    artworkInDb!.Price.Should().Be(command.Price);
   }
 }
