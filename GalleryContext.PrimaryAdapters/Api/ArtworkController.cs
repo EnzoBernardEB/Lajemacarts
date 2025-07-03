@@ -28,7 +28,8 @@ public class ArtworkController(AddArtworkUseCase addArtworkUsecase, GetAllArtwor
     {
         var result = await getAllArtworksUseCase.ExecuteAsync();
 
-        return Ok(result.Value);
-    }
+        return result.IsSuccess
+                ? Ok(result.Value)
+                : BadRequest(result.Error);    }
 
 }
