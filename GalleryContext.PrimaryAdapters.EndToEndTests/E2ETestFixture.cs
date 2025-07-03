@@ -73,7 +73,7 @@ public sealed class E2ETestFixture<TStartup> : WebApplicationFactory<TStartup>, 
 
   public void ResetDatabase()
   {
-    var t = ArtworkDbContext.Artworks.Count();
     ArtworkDbContext.Artworks!.RemoveRange(ArtworkDbContext.Artworks);
+    ArtworkDbContext.SaveChanges();
   }
 }

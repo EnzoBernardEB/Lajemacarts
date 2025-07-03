@@ -12,8 +12,6 @@ using GalleryContext.BusinessLogic.Models.ValueObjects;
 
 public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimeProvider dateTimeProvider)
 {
-    private readonly IArtworkRepository _artworkRepository = artworkRepository ?? throw new ArgumentNullException(nameof(artworkRepository));
-
     public async Task<Result<ArtworkDto>> ExecuteAsync(AddArtworkCommand command)
     {
         var nameResult = ArtworkName.Create(command.Name);
@@ -46,7 +44,7 @@ public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimePr
             return Result<ArtworkDto>.Failure(artworkResult.Error);
         }
 
-        await _artworkRepository.AddAsync(artworkResult.Value);
+        await artworkRepository.AddAsync(artworkResult.Value);
 
         var artworkDto = new ArtworkDto(
             artworkResult.Value.Id,
