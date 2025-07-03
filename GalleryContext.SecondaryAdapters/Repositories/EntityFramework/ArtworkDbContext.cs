@@ -78,7 +78,13 @@ public class ArtworkDbContext(DbContextOptions<ArtworkDbContext> options) : DbCo
       b.HasIndex(e => e.Name).HasDatabaseName("ix_artworks_name");
       b.HasIndex(e => e.Status).HasDatabaseName("ix_artworks_status");
       b.HasIndex(e => e.IsDeleted).HasDatabaseName("ix_artworks_is_deleted");
+      b.HasQueryFilter(e => !e.IsDeleted);
 
+      b.Property(e => e.Version)
+       .HasColumnName("xmin")
+       .HasColumnType("xid")
+       .ValueGeneratedOnAddOrUpdate()
+       .IsConcurrencyToken();
     });
   }
 
