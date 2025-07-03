@@ -66,4 +66,42 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     artworkInDb!.Name.Should().Be(command.Name);
     artworkInDb!.Price.Should().Be(command.Price);
   }
+  
+  [Fact]
+  public async Task GetAllArtworks_ReturnsEmptyList_WhenDatabaseIsEmtpy()
+  {
+    using var client = _fixture.CreateClient();
+
+    var response = await client.GetAsync("/api/v1/artworks");
+
+    response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+    var returnedDtos = await response.Content.ReadFromJsonAsync<IEnumerable<ArtworkDto>>();
+    returnedDtos.Should().NotBeNull();
+    returnedDtos.Should().BeEmpty();
+  }
+  
+  [Fact]
+  public async Task GetAllArtworks_ReturnsArtworks_WhenDatabaseHasData()
+  {
+
+    using (var scope = _fixture.Server.Services.CreateScope())
+    {
+      var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
+      var artwork = Artwork.Create(ArtworkName.Create("Test Artwork 1").Value, ArtworkDescription.Create("Description 1").Value, 1, new List<int> { 1 }, Dimensions.Create(1,1,1, DimensionUnit.cm).Value, WeightCategory.LessThan1kg, Money.Create(1).Value, 2024, DateTime.UtcNow).Value;
+      dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
+      await dbContext.SaveChangesAsync();
+    }
+    
+    using var client = _fixture.CreateClient();
+
+    var response = await client.GetAsync("/api/v1/artworks");
+
+    response.StatusCode.Should().Be(HttpStatusCode.OK);
+    var returnedDtos = await response.Content.ReadFromJsonAsync<IEnumerable<ArtworkDto>>();
+    
+    returnedDtos.Should().NotBeNull();
+    returnedDtos.Should().HaveCount(1);
+    returnedDtos!.First().Name.Should().Be("Test Artwork 1");
+  }
 }
