@@ -8,7 +8,7 @@ namespace GalleryContext.SecondaryAdapters.Repositories.EntityFramework.Entities
 public class ArtworkEntity()
 {
     private ArtworkEntity(
-        int id,
+        Guid id,
         string name, string description, int artworkTypeId, List<int> materialIds,
         decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
         WeightCategory weightCategory, decimal price, int creationYear, ArtworkStatus status,
@@ -31,7 +31,7 @@ public class ArtworkEntity()
         UpdatedAt = updatedAt;
         IsDeleted = isDeleted;
     }
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     [MaxLength(255)]
     public string Name { get; set; } = string.Empty;
