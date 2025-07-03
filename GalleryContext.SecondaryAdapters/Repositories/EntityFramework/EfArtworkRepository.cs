@@ -7,18 +7,16 @@ namespace GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 
 public class EfArtworkRepository(ArtworkDbContext dbContext) : IArtworkRepository
 {
-    public async Task<Artwork> AddAsync(Artwork artwork)
+    public async Task AddAsync(Artwork artwork)
     {
         var artworkEntity = ArtworkEntity.FromDomain(artwork);
 
         dbContext.Artworks.Add(artworkEntity);
 
         await dbContext.SaveChangesAsync();
-        
-        return MapToDomain(artworkEntity);
     }
 
-    public async Task<Artwork?> GetByIdAsync(int id)
+    public async Task<Artwork?> GetByIdAsync(Guid id)
     {
         var artworkEntity = await dbContext.Artworks.FindAsync(id);
 
@@ -52,7 +50,7 @@ public class EfArtworkRepository(ArtworkDbContext dbContext) : IArtworkRepositor
         }
     }
     
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(Guid id)
     {
         var entity = await dbContext.Artworks.FindAsync(id);
 

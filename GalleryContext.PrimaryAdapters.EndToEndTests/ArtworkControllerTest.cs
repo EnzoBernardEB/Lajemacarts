@@ -50,17 +50,20 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     );
     
     var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/artworks", command);
-    
     addArtworkResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+    
+    var returnedDto = await addArtworkResponse.Content.ReadFromJsonAsync<ArtworkDto>();
+    returnedDto.Should().NotBeNull();
+    returnedDto!.Id.Should().NotBeEmpty();
+    returnedDto.Name.Should().Be(command.Name);
 
     using var scope = _fixture.Server.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
 
-    var artworkInDb = await dbContext.Artworks!.AsNoTracking().FirstAsync();
+    var artworkInDb = await dbContext.Artworks!.AsNoTracking().FirstOrDefaultAsync(a => a.Id == returnedDto.Id);
 
     artworkInDb.Should().NotBeNull();
-    artworkInDb.Id.Should().Be(1);
-    artworkInDb.Price.Should().Be(command.Price);
-    artworkInDb.Name.Should().Be(command.Name);
+    artworkInDb!.Name.Should().Be(command.Name);
+    artworkInDb!.Price.Should().Be(command.Price);
   }
 }

@@ -4,9 +4,9 @@ namespace GalleryContext.BusinessLogic.Gateways.Repositories;
 
 public interface IArtworkRepository
 {
-  Task<Artwork> AddAsync(Artwork artwork);
+  Task AddAsync(Artwork artwork);
   Task<IEnumerable<Artwork>> GetAllAsync();
-  Task DeleteAsync(int id);
+  Task DeleteAsync(Guid id);
   Task UpdateAsync(Artwork artwork);
-  Task<Artwork?> GetByIdAsync(int id);
+  Task<Artwork?> GetByIdAsync(Guid id);
 }

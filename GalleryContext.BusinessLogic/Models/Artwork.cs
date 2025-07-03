@@ -39,6 +39,7 @@ public class Artwork
 
         var artwork = new Artwork
         {
+            Id = Guid.NewGuid(),
             Name = name,
             Description = description,
             ArtworkTypeId = artworkTypeId,
@@ -57,14 +58,14 @@ public class Artwork
     }
 
     public static Artwork Hydrate(
-            int id, string name, string description, int artworkTypeId, List<int> materialIds,
+            Guid id, string name, string description, int artworkTypeId, List<int> materialIds,
             decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
             WeightCategory weightCategory, decimal price, int creationYear,
             ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt)
     {
         return new Artwork
         {
-            Id = id,
+            Id = id, 
             Name = ArtworkName.Hydrate(name),
             Description = ArtworkDescription.Hydrate(description),
             ArtworkTypeId = artworkTypeId,
@@ -79,7 +80,7 @@ public class Artwork
             UpdatedAt = updatedAt
         };
     }
-    public int Id { get; private set; }
+    public Guid Id { get; private set; }
     public ArtworkName Name { get; private set; }
     public ArtworkDescription Description { get; private set; }
     public int ArtworkTypeId { get; private set; }

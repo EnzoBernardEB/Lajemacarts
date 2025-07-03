@@ -13,6 +13,9 @@ public class GalleryIntegrationTestFixture : DatabaseTestFixture
         var optionsBuilder = new DbContextOptionsBuilder<ArtworkDbContext>();
         optionsBuilder.UseNpgsql(ConnectionString());
         ArtworkDbContext = new ArtworkDbContext(optionsBuilder.Options);
+
+        ArtworkDbContext.Database.EnsureCreated();
+
         return ArtworkDbContext;
     }
 

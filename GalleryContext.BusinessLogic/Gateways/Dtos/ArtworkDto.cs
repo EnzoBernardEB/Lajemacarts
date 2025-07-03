@@ -3,7 +3,7 @@
 namespace GalleryContext.BusinessLogic.Gateways.Dtos;
 
 public record ArtworkDto(
-    int Id,
+    Guid Id,
     string Name,
     string Description,
     int ArtworkTypeId,

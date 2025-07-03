@@ -46,22 +46,22 @@ public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimePr
             return Result<ArtworkDto>.Failure(artworkResult.Error);
         }
 
-        var savedArtwork = await _artworkRepository.AddAsync(artworkResult.Value);
+        await _artworkRepository.AddAsync(artworkResult.Value);
 
         var artworkDto = new ArtworkDto(
-            savedArtwork.Id,
-            savedArtwork.Name.Value,
-            savedArtwork.Description.Value,
-            savedArtwork.ArtworkTypeId,
-            new List<int>(savedArtwork.MaterialIds),
-            savedArtwork.Dimensions.Length,
-            savedArtwork.Dimensions.Width,
-            savedArtwork.Dimensions.Height,
-            savedArtwork.Dimensions.Unit,
-            savedArtwork.WeightCategory,
-            savedArtwork.Price.Amount,
-            savedArtwork.CreationYear,
-            savedArtwork.Status.ToString()
+            artworkResult.Value.Id,
+            artworkResult.Value.Name.Value,
+            artworkResult.Value.Description.Value,
+            artworkResult.Value.ArtworkTypeId,
+            new List<int>(artworkResult.Value.MaterialIds),
+            artworkResult.Value.Dimensions.Length,
+            artworkResult.Value.Dimensions.Width,
+            artworkResult.Value.Dimensions.Height,
+            artworkResult.Value.Dimensions.Unit,
+            artworkResult.Value.WeightCategory,
+            artworkResult.Value.Price.Amount,
+            artworkResult.Value.CreationYear,
+            artworkResult.Value.Status.ToString()
         );
 
         return Result<ArtworkDto>.Success(artworkDto);

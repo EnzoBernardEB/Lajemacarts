@@ -43,7 +43,7 @@ public class AddArtworkUseCaseTest
     result.Value.Should().NotBeNull();
 
     var artworkDto = result.Value!;
-    artworkDto.Id.Should().BeGreaterThan(0);
+    artworkDto.Id.Should().NotBe(Guid.Empty);
     artworkDto.Name.Should().Be(command.Name);
     artworkDto.Price.Should().Be(command.Price);
     artworkDto.Status.Should().Be(ArtworkStatus.Draft.ToString());

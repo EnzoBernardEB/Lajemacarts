@@ -57,28 +57,27 @@ public class EfArtworkRepositoryTest(GalleryIntegrationTestFixture fixture)
     [Fact]
     public async Task Can_Get_An_Artwork_By_Id()
     {
-        var artworkDomain = Artwork.Create(
-          ArtworkName.Create("The Starry Night").Value,
-          ArtworkDescription.Create("Oil on canvas by Vincent van Gogh.").Value,
-          2, new List<int> { 2 },
-          Dimensions.Create(73.7m, 92.1m, 0.3m, DimensionUnit.cm).Value,
-          WeightCategory.Between1And5kg,
-          Money.Create(100_000_000m).Value,
-          1889,
-          DateTime.UtcNow
+        var artworkInDatabase = Artwork.Create(
+                ArtworkName.Create("The Starry Night").Value,
+                ArtworkDescription.Create("Oil on canvas by Vincent van Gogh.").Value,
+                2, new List<int> { 2 },
+                Dimensions.Create(73.7m, 92.1m, 0.3m, DimensionUnit.cm).Value,
+                WeightCategory.Between1And5kg,
+                Money.Create(100_000_000m).Value,
+                1889,
+                DateTime.UtcNow
         ).Value;
-        
-        var entityToSave = ArtworkEntity.FromDomain(artworkDomain);
-        await fixture.ArtworkDbContext.Artworks.AddAsync(entityToSave);
-        await fixture.ArtworkDbContext.SaveChangesAsync();
 
         var artworkRepository = new EfArtworkRepository(fixture.ArtworkDbContext);
+    
+        await artworkRepository.AddAsync(artworkInDatabase);
 
-        var retrievedArtwork = await artworkRepository.GetByIdAsync(entityToSave.Id);
+        var retrievedArtwork = await artworkRepository.GetByIdAsync(artworkInDatabase.Id);
 
         retrievedArtwork.Should().NotBeNull();
-        retrievedArtwork!.Id.Should().Be(artworkDomain.Id);
-        retrievedArtwork.Name.Value.Should().Be(artworkDomain.Name.Value);
+    
+        retrievedArtwork!.Id.Should().Be(artworkInDatabase.Id); 
+        retrievedArtwork.Name!.Value.Should().Be(artworkInDatabase.Name.Value);
     }
 
     [Fact]
