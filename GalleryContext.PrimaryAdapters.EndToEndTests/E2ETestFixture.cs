@@ -56,7 +56,7 @@ public sealed class E2ETestFixture<TStartup> : WebApplicationFactory<TStartup>, 
     using var serviceScope = serviceCollection.BuildServiceProvider().CreateScope();
     var scopedServices = serviceScope.ServiceProvider;
     var db = scopedServices.GetRequiredService<ArtworkDbContext>();
-    ArtworkDbContext.Database.EnsureCreated();
+    db.Database.EnsureCreated();
     db.SaveChanges();
   }
 
