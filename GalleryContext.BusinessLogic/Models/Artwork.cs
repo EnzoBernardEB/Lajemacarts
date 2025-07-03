@@ -107,9 +107,8 @@ public class Artwork
 
   public void MarkAsDeleted(DateTime updateDate)
   {
-    Status = ArtworkStatus.Archived;
+    Archive(updateDate);
     IsDeleted = true;
-    UpdatedAt = updateDate;
   }
 
   public Result UpdateInfo(

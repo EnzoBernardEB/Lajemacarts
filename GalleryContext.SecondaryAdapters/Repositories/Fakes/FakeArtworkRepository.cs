@@ -13,11 +13,6 @@ public class FakeArtworkRepository : IArtworkRepository
     return Task.CompletedTask;
   }
 
-  public Task DeleteAsync(Guid id)
-  {
-    _artworks.Remove(id);
-    return Task.CompletedTask;
-  }
   public Task<Artwork?> GetByIdAsync(Guid id)
   {
     _artworks.TryGetValue(id, out var artwork);
