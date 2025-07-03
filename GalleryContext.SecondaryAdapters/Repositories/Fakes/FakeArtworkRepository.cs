@@ -1,15 +1,11 @@
 ﻿using GalleryContext.BusinessLogic.Gateways.Repositories;
 using GalleryContext.BusinessLogic.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace GalleryContext.SecondaryAdapters.Repositories.Fakes;
 
 public class FakeArtworkRepository : IArtworkRepository
 {
-  private readonly Dictionary<Guid, Artwork> _artworks = new();
+  private readonly Dictionary<Guid, Artwork> _artworks = new Dictionary<Guid, Artwork>();
 
   public Task AddAsync(Artwork artwork)
   {
@@ -17,15 +13,27 @@ public class FakeArtworkRepository : IArtworkRepository
     return Task.CompletedTask;
   }
 
-  public Task<IEnumerable<Artwork>> GetAllAsync()
-  {
-    return Task.FromResult<IEnumerable<Artwork>>(_artworks.Values.ToList());
-  }
-
   public Task DeleteAsync(Guid id)
   {
     _artworks.Remove(id);
     return Task.CompletedTask;
+  }
+  public Task<Artwork?> GetByIdAsync(Guid id)
+  {
+    _artworks.TryGetValue(id, out var artwork);
+
+    if (artwork != null && artwork.IsDeleted)
+    {
+      return Task.FromResult<Artwork?>(null);
+    }
+
+    return Task.FromResult(artwork);
+  }
+
+  public Task<IEnumerable<Artwork>> GetAllAsync()
+  {
+    var nonDeletedArtworks = _artworks.Values.Where(a => !a.IsDeleted).ToList();
+    return Task.FromResult<IEnumerable<Artwork>>(nonDeletedArtworks);
   }
 
   public Task UpdateAsync(Artwork artwork)
@@ -35,12 +43,6 @@ public class FakeArtworkRepository : IArtworkRepository
       _artworks[artwork.Id] = artwork;
     }
     return Task.CompletedTask;
-  }
-
-  public Task<Artwork?> GetByIdAsync(Guid id)
-  {
-    _artworks.TryGetValue(id, out var artwork);
-    return Task.FromResult(artwork);
   }
 
   public void FeedWith(params Artwork[] artworks)

@@ -7,69 +7,48 @@ namespace GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 
 public class EfArtworkRepository(ArtworkDbContext dbContext) : IArtworkRepository
 {
-    public async Task AddAsync(Artwork artwork)
-    {
-        var artworkEntity = ArtworkEntity.FromDomain(artwork);
+  public async Task AddAsync(Artwork artwork)
+  {
+    var artworkEntity = ArtworkEntity.FromDomain(artwork);
 
-        dbContext.Artworks.Add(artworkEntity);
+    dbContext.Artworks.Add(artworkEntity);
 
-        await dbContext.SaveChangesAsync();
-    }
+    await dbContext.SaveChangesAsync();
+  }
 
-    public async Task<Artwork?> GetByIdAsync(Guid id)
-    {
-        var artworkEntity = await dbContext.Artworks.FindAsync(id);
-
-        return artworkEntity == null ? null : MapToDomain(artworkEntity);
-    }
-    
-    public async Task<IEnumerable<Artwork>> GetAllAsync()
-    {
-        var entities = await dbContext.Artworks
-                                       .Where(a => !a.IsDeleted)
+  public async Task<Artwork?> GetByIdAsync(Guid id)
+  {
+    var artworkEntity = await dbContext.Artworks
                                        .AsNoTracking()
-                                       .ToListAsync();
+                                       .FirstOrDefaultAsync(a => a.Id == id);
 
-        return entities.Select(MapToDomain).ToList();
-    }
-    
-    public async Task UpdateAsync(Artwork artwork)
-    {
-        var entity = ArtworkEntity.FromDomain(artwork);
+    return artworkEntity == null ? null : MapToDomain(artworkEntity);
+  }
 
-        dbContext.Entry(entity).State = EntityState.Modified;
+  public async Task<IEnumerable<Artwork>> GetAllAsync()
+  {
+    var entities = await dbContext.Artworks
+                                  .AsNoTracking()
+                                  .ToListAsync();
 
-        try
-        {
-            await dbContext.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            Console.Error.WriteLine($"Concurrency error updating artwork {artwork.Id}: {ex.Message}");
-            throw;
-        }
-    }
-    
-    public async Task DeleteAsync(Guid id)
-    {
-        var entity = await dbContext.Artworks.FindAsync(id);
+    return entities.Select(MapToDomain).ToList();
+  }
 
-        if (entity != null)
-        {
-            entity.IsDeleted = true;
-            dbContext.Entry(entity).State = EntityState.Modified;
+  public async Task UpdateAsync(Artwork artwork)
+  {
+    var entity = ArtworkEntity.FromDomain(artwork);
+    var entry = dbContext.Artworks.Attach(entity);
+    entry.State = EntityState.Modified;
+    await dbContext.SaveChangesAsync();
+  }
 
-            await dbContext.SaveChangesAsync();
-        }
-    }
-
-    private static Artwork MapToDomain(ArtworkEntity entity)
-    {
-        return Artwork.Hydrate(
-            entity.Id, entity.Name, entity.Description, entity.ArtworkTypeId, entity.MaterialIds,
-            entity.DimensionL, entity.DimensionW, entity.DimensionH, entity.DimensionUnit,
-            entity.WeightCategory, entity.Price, entity.CreationYear,
-            entity.Status, entity.IsDeleted, entity.CreatedAt, entity.UpdatedAt
-        );
-    }
+  private static Artwork MapToDomain(ArtworkEntity entity)
+  {
+    return Artwork.Hydrate(
+        entity.Id, entity.Name, entity.Description, entity.ArtworkTypeId, entity.MaterialIds,
+        entity.DimensionL, entity.DimensionW, entity.DimensionH, entity.DimensionUnit,
+        entity.WeightCategory, entity.Price, entity.CreationYear,
+        entity.Status, entity.IsDeleted, entity.CreatedAt, entity.UpdatedAt, entity.Version
+    );
+  }
 }

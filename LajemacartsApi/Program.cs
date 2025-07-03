@@ -1,19 +1,19 @@
-using System.Reflection;
 using GalleryContext.BusinessLogic.Gateways.Providers;
 using GalleryContext.BusinessLogic.Gateways.Repositories;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
+using GalleryContext.BusinessLogic.UseCases.DeleteArtwork;
 using GalleryContext.BusinessLogic.UseCases.GetAllArtworks;
 using GalleryContext.SecondaryAdapters.Providers;
 using GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-
+using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddControllers()
-  .PartManager.ApplicationParts.Add(new AssemblyPart(Assembly.Load("GalleryContext.PrimaryAdapters")));
+       .PartManager.ApplicationParts.Add(new AssemblyPart(Assembly.Load("GalleryContext.PrimaryAdapters")));
 
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
@@ -32,6 +32,7 @@ builder.Services.AddScoped<IArtworkRepository, EfArtworkRepository>();
 builder.Services.AddSingleton<IDateTimeProvider, SystemeDateTimeProvider>();
 builder.Services.AddScoped<AddArtworkUseCase>();
 builder.Services.AddScoped<GetAllArtworksUseCase>();
+builder.Services.AddScoped<DeleteArtworkUseCase>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -45,8 +46,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 var connectionString = builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase");
 
-builder.Services.AddDbContext<ArtworkDbContext>(
-    options => options.UseNpgsql(connectionString)
+builder.Services.AddDbContext<ArtworkDbContext>(options => options.UseNpgsql(connectionString)
 );
 var app = builder.Build();
 

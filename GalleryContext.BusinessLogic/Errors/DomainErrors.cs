@@ -14,5 +14,6 @@ public static class DomainErrors
     public static readonly Error DescriptionRequired = new Error("Artwork.DescriptionRequired", "Artwork description is required.");
 
     public static readonly Error DimensionsMustBePositive = new Error("Artwork.Dimensions", "Dimensions must be positive values.");
+    public static readonly Error NotFound = new Error("Artwork.NotFound", "The artwork with the specified ID was not found.");
   }
 }
