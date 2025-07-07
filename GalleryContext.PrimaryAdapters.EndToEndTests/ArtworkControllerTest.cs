@@ -206,15 +206,14 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
   {
 
     var artwork = CreateValidTestArtwork();
-    ArtworkEntity artworkFromDb;
+    uint initialVersion;
     using (var scope = _fixture.Services.CreateScope())
     {
       var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
-      dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
+      var entityEntry = dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
       await dbContext.SaveChangesAsync();
-      artworkFromDb = await dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == artwork.Id);
+      initialVersion = entityEntry.Entity.Version;
     }
-    var initialVersion = artworkFromDb!.Version;
 
     var user1Request = new UpdateArtworkRequest(
         "Update by User 1", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,

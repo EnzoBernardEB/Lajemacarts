@@ -24,7 +24,7 @@ public class UpdateArtworkUseCaseTest
     _updateArtworkUseCase = new UpdateArtworkUseCase(_fakeArtworkRepository, _dateTimeProvider);
   }
 
-  private static Artwork CreateValidArtwork(string name = "Initial Name")
+  private Artwork CreateValidArtwork(string name = "Initial Name")
   {
     var artworkResult = Artwork.Create(
         ArtworkName.Create(name).Value,
@@ -38,7 +38,7 @@ public class UpdateArtworkUseCaseTest
         WeightCategory.LessThan1kg,
         Money.Create(1000m).Value,
         2020,
-        DateTime.UtcNow
+        _dateTimeProvider.UtcNow
     );
     artworkResult.IsSuccess.Should().BeTrue();
     return artworkResult.Value;

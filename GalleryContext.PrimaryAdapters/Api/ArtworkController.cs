@@ -1,5 +1,4 @@
-﻿using GalleryContext.BusinessLogic.Errors;
-using GalleryContext.BusinessLogic.Gateways.Dtos;
+﻿using GalleryContext.BusinessLogic.Gateways.Dtos;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
 using GalleryContext.BusinessLogic.UseCases.DeleteArtwork;
 using GalleryContext.BusinessLogic.UseCases.GetAllArtworks;
@@ -87,15 +86,12 @@ public class ArtworkController(
 
     var result = await updateArtworkUseCase.ExecuteAsync(command);
 
-    if (!result.IsFailure)
-      return NoContent();
-    if (result.Error == DomainErrors.Artwork.NotFound)
-      return NotFound(result.Error);
-
-    if (result.Error == DomainErrors.Artwork.ConcurrencyConflict)
-      return Conflict(result.Error);
-
-    return BadRequest(result.Error);
+    return result.Error switch
+    {
+      { Code: "Artwork.NotFound" } => NotFound(result.Error),
+      { Code: "Artwork.Concurrency" } => Conflict(result.Error),
+      _ => BadRequest(result.Error),
+    };
 
   }
 }
