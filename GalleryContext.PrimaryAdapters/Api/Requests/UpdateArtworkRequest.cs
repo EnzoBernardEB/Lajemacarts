@@ -1,9 +1,8 @@
 ﻿using GalleryContext.BusinessLogic.Models.Enums;
 
-namespace GalleryContext.BusinessLogic.Gateways.Dtos;
+namespace GalleryContext.PrimaryAdapters.Api.Requests;
 
-public record ArtworkDto(
-    Guid Id,
+public record UpdateArtworkRequest(
     string Name,
     string Description,
     int ArtworkTypeId,
@@ -15,6 +14,5 @@ public record ArtworkDto(
     WeightCategory WeightCategory,
     decimal Price,
     int CreationYear,
-    string Status,
     uint Version
 );

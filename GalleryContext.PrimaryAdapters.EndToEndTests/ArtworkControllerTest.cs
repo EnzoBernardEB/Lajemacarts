@@ -4,6 +4,7 @@ using GalleryContext.BusinessLogic.Models;
 using GalleryContext.BusinessLogic.Models.Enums;
 using GalleryContext.BusinessLogic.Models.ValueObjects;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
+using GalleryContext.PrimaryAdapters.Api.Requests;
 using GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 using GalleryContext.SecondaryAdapters.Repositories.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,24 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
   public void Dispose()
   {
     _fixture.ResetDatabase();
+    GC.SuppressFinalize(this);
+  }
+
+  private static Artwork CreateValidTestArtwork(string name = "Test Artwork")
+  {
+    var result = Artwork.Create(
+        ArtworkName.Create(name).Value,
+        ArtworkDescription.Create("Valid Description").Value,
+        1, new List<int>
+        {
+          1,
+        },
+        Dimensions.Create(1, 1, 1, DimensionUnit.cm).Value,
+        WeightCategory.LessThan1kg, Money.Create(100).Value,
+        2024, DateTime.UtcNow
+    );
+    result.IsSuccess.Should().BeTrue();
+    return result.Value;
   }
 
   [Fact]
@@ -43,13 +62,9 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
           1,
           2,
         },
-        24.0m,
-        33.0m,
-        1.5m,
-        DimensionUnit.cm,
-        WeightCategory.Between1And5kg,
-        150000m,
-        1931
+        24.0m, 33.0m, 1.5m,
+        DimensionUnit.cm, WeightCategory.Between1And5kg,
+        150000m, 1931
     );
 
     var addArtworkResponse = await client.PostAsJsonAsync("/api/v1/artworks", command);
@@ -74,99 +89,154 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
   public async Task GetAllArtworks_ReturnsEmptyList_WhenDatabaseIsEmtpy()
   {
     using var client = _fixture.CreateClient();
-
     var response = await client.GetAsync("/api/v1/artworks");
-
     response.StatusCode.Should().Be(HttpStatusCode.OK);
-
     var returnedDtos = await response.Content.ReadFromJsonAsync<IEnumerable<ArtworkDto>>();
-    returnedDtos.Should().NotBeNull();
     returnedDtos.Should().BeEmpty();
   }
 
   [Fact]
   public async Task GetAllArtworks_ReturnsArtworks_WhenDatabaseHasData()
   {
-
+    var artwork = CreateValidTestArtwork("Test Artwork 1");
     using (var scope = _fixture.Server.Services.CreateScope())
     {
       var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
-      var artwork = Artwork.Create(ArtworkName.Create("Test Artwork 1").Value, ArtworkDescription.Create("Description 1").Value, 1,
-                               new List<int>
-                               {
-                                 1,
-                               }, Dimensions.Create(1, 1, 1, DimensionUnit.cm).Value, WeightCategory.LessThan1kg, Money.Create(1).Value,
-                               2024, DateTime.UtcNow)
-                           .Value;
       dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
       await dbContext.SaveChangesAsync();
     }
 
     using var client = _fixture.CreateClient();
-
     var response = await client.GetAsync("/api/v1/artworks");
 
     response.StatusCode.Should().Be(HttpStatusCode.OK);
     var returnedDtos = await response.Content.ReadFromJsonAsync<IEnumerable<ArtworkDto>>();
 
-    returnedDtos.Should().NotBeNull();
     returnedDtos!.Should().HaveCount(1);
     returnedDtos!.First().Name.Should().Be("Test Artwork 1");
   }
+
   [Fact]
   public async Task DeleteArtwork_ShouldReturnNotFound_WhenArtworkDoesNotExist()
   {
     using var client = _fixture.CreateClient();
     var nonExistentId = Guid.NewGuid();
-
     var response = await client.DeleteAsync($"/api/v1/artworks/{nonExistentId}");
-
     response.StatusCode.Should().Be(HttpStatusCode.NotFound);
   }
 
   [Fact]
   public async Task DeleteArtwork_ShouldSetStatusToArchivedAndReturnNoContent_WhenArtworkExists()
   {
-
-    Guid artworkId;
+    var artwork = CreateValidTestArtwork("E2E Artwork to Delete");
     using (var scope = _fixture.Server.Services.CreateScope())
     {
       var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
-      var artworkResult = Artwork.Create(
-          ArtworkName.Create("E2E Artwork to Delete").Value,
-          ArtworkDescription.Create("A valid description").Value,
-          1, new List<int>
-          {
-            1,
-          },
-          Dimensions.Create(1, 1, 1, DimensionUnit.cm).Value,
-          WeightCategory.LessThan1kg,
-          Money.Create(1).Value, 2024, DateTime.UtcNow);
-
-      artworkResult.IsSuccess.Should().BeTrue();
-      var artwork = artworkResult.Value;
-      artworkId = artwork.Id;
-
       dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
       await dbContext.SaveChangesAsync();
     }
 
     using var client = _fixture.CreateClient();
-
-    var response = await client.DeleteAsync($"/api/v1/artworks/{artworkId}");
+    var response = await client.DeleteAsync($"/api/v1/artworks/{artwork.Id}");
 
     response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
     using (var scope = _fixture.Server.Services.CreateScope())
     {
       var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
-      var artworkInDb = await dbContext.Artworks
-                                       .IgnoreQueryFilters()
-                                       .FirstOrDefaultAsync(a => a.Id == artworkId);
-
+      var artworkInDb = await dbContext.Artworks.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == artwork.Id);
       artworkInDb.Should().NotBeNull();
       artworkInDb!.IsDeleted.Should().BeTrue();
       artworkInDb.Status.Should().Be(ArtworkStatus.Archived);
     }
+  }
+
+  [Fact]
+  public async Task UpdateArtwork_ShouldReturnNoContent_WhenUpdateIsSuccessful()
+  {
+    var artwork = CreateValidTestArtwork("Initial Name");
+    uint initialVersion;
+    using (var scope = _fixture.Services.CreateScope())
+    {
+      var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
+      var entity = dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
+      await dbContext.SaveChangesAsync();
+      initialVersion = entity.Entity.Version;
+    }
+
+    var request = new UpdateArtworkRequest(
+        "Updated via E2E", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
+        artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear, initialVersion
+    );
+    using var client = _fixture.CreateClient();
+
+    var response = await client.PutAsJsonAsync($"/api/v1/artworks/{artwork.Id}", request);
+
+    response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+    using (var scope = _fixture.Services.CreateScope())
+    {
+      var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
+      var artworkInDb = await dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == artwork.Id);
+      artworkInDb.Should().NotBeNull();
+      artworkInDb!.Name.Should().Be("Updated via E2E");
+    }
+  }
+
+  [Fact]
+  public async Task UpdateArtwork_ShouldReturnNotFound_WhenArtworkDoesNotExist()
+  {
+    using var client = _fixture.CreateClient();
+    var nonExistentId = Guid.NewGuid();
+    var artwork = CreateValidTestArtwork();
+    var request = new UpdateArtworkRequest(
+        artwork.Name.Value, artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
+        artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear, artwork.Version
+    );
+
+    var response = await client.PutAsJsonAsync($"/api/v1/artworks/{nonExistentId}", request);
+
+    response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+  }
+
+  [Fact]
+  public async Task UpdateArtwork_ShouldReturnConflict_WhenConcurrencyConflictOccurs()
+  {
+
+    var artwork = CreateValidTestArtwork();
+    ArtworkEntity artworkFromDb;
+    using (var scope = _fixture.Services.CreateScope())
+    {
+      var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
+      dbContext.Artworks.Add(ArtworkEntity.FromDomain(artwork));
+      await dbContext.SaveChangesAsync();
+      artworkFromDb = await dbContext.Artworks.AsNoTracking().FirstOrDefaultAsync(a => a.Id == artwork.Id);
+    }
+    var initialVersion = artworkFromDb!.Version;
+
+    var user1Request = new UpdateArtworkRequest(
+        "Update by User 1", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
+        artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear,
+        initialVersion
+    );
+    var user2Request = new UpdateArtworkRequest(
+        "Update by User 2", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
+        artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear,
+        initialVersion
+    );
+    using var user1Client = _fixture.CreateClient();
+    using var user2Client = _fixture.CreateClient();
+
+
+    var responseUser1 = await user1Client.PutAsJsonAsync($"/api/v1/artworks/{artwork.Id}", user1Request);
+    responseUser1.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+    var responseUser2 = await user2Client.PutAsJsonAsync($"/api/v1/artworks/{artwork.Id}", user2Request);
+
+    responseUser2.StatusCode.Should().Be(HttpStatusCode.Conflict);
   }
 }

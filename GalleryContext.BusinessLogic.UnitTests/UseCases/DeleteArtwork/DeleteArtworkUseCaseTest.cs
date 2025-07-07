@@ -9,14 +9,14 @@ using GalleryContext.SecondaryAdapters.Providers.Fakes;
 using GalleryContext.SecondaryAdapters.Repositories.Fakes;
 using Xunit;
 
-namespace GalleryContext.BusinessLogic.UnitTests.UseCases.DeleteArtworks;
+namespace GalleryContext.BusinessLogic.UnitTests.UseCases.DeleteArtwork;
 
-public class DeleteArtworksUseCaseTest
+public class DeleteArtworkUseCaseTest
 {
   private readonly DeleteArtworkUseCase _deleteArtworkUseCase;
   private readonly FakeArtworkRepository _fakeArtworkRepository;
 
-  public DeleteArtworksUseCaseTest()
+  public DeleteArtworkUseCaseTest()
   {
     _fakeArtworkRepository = new FakeArtworkRepository();
     IDateTimeProvider dateTimeProvider = new FakeDateTimeProvider();

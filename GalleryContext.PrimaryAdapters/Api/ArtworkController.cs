@@ -1,7 +1,10 @@
-﻿using GalleryContext.BusinessLogic.Gateways.Dtos;
+﻿using GalleryContext.BusinessLogic.Errors;
+using GalleryContext.BusinessLogic.Gateways.Dtos;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
 using GalleryContext.BusinessLogic.UseCases.DeleteArtwork;
 using GalleryContext.BusinessLogic.UseCases.GetAllArtworks;
+using GalleryContext.BusinessLogic.UseCases.UpdateArtwork;
+using GalleryContext.PrimaryAdapters.Api.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Core.Primitives;
@@ -13,7 +16,8 @@ namespace GalleryContext.PrimaryAdapters.Api;
 public class ArtworkController(
     AddArtworkUseCase addArtworkUsecase,
     GetAllArtworksUseCase getAllArtworksUseCase,
-    DeleteArtworkUseCase deleteArtworkUseCase
+    DeleteArtworkUseCase deleteArtworkUseCase,
+    UpdateArtworkUseCase updateArtworkUseCase
 ) : ControllerBase
 {
   [HttpPost(Name = "AddArtwork")]
@@ -56,5 +60,42 @@ public class ArtworkController(
     }
 
     return NoContent();
+  }
+
+  [HttpPut("{id:guid}", Name = "UpdateArtwork")]
+  [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(StatusCodes.Status400BadRequest)]
+  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  [ProducesResponseType(StatusCodes.Status409Conflict)]
+  public async Task<IActionResult> UpdateArtwork(Guid id, [FromBody] UpdateArtworkRequest request)
+  {
+    var command = new UpdateArtworkCommand(
+        id,
+        request.Name,
+        request.Description,
+        request.ArtworkTypeId,
+        request.MaterialIds,
+        request.DimensionL,
+        request.DimensionW,
+        request.DimensionH,
+        request.DimensionUnit,
+        request.WeightCategory,
+        request.Price,
+        request.CreationYear,
+        request.Version
+    );
+
+    var result = await updateArtworkUseCase.ExecuteAsync(command);
+
+    if (!result.IsFailure)
+      return NoContent();
+    if (result.Error == DomainErrors.Artwork.NotFound)
+      return NotFound(result.Error);
+
+    if (result.Error == DomainErrors.Artwork.ConcurrencyConflict)
+      return Conflict(result.Error);
+
+    return BadRequest(result.Error);
+
   }
 }

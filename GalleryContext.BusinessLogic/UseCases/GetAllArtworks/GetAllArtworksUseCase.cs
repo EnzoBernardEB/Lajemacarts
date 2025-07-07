@@ -25,7 +25,8 @@ public class GetAllArtworksUseCase(IArtworkRepository artworkRepository)
           a.WeightCategory,
           a.Price.Amount,
           a.CreationYear,
-          a.Status.ToString()
+          a.Status.ToString(),
+          a.Version
       ));
 
       return Result<IEnumerable<ArtworkDto>>.Success(artworkDtos);
