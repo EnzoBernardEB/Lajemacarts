@@ -86,12 +86,15 @@ public class ArtworkController(
 
     var result = await updateArtworkUseCase.ExecuteAsync(command);
 
+    if (result.IsSuccess)
+    {
+      return NoContent();
+    }
     return result.Error switch
     {
       { Code: "Artwork.NotFound" } => NotFound(result.Error),
       { Code: "Artwork.Concurrency" } => Conflict(result.Error),
       _ => BadRequest(result.Error),
     };
-
   }
 }
