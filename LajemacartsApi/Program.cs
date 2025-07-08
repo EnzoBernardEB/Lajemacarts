@@ -3,6 +3,7 @@ using GalleryContext.BusinessLogic.Gateways.Repositories;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
 using GalleryContext.BusinessLogic.UseCases.DeleteArtwork;
 using GalleryContext.BusinessLogic.UseCases.GetAllArtworks;
+using GalleryContext.BusinessLogic.UseCases.UpdateArtwork;
 using GalleryContext.SecondaryAdapters.Providers;
 using GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -31,6 +32,7 @@ builder.Services.AddScoped<IArtworkRepository, EfArtworkRepository>();
 
 builder.Services.AddSingleton<IDateTimeProvider, SystemeDateTimeProvider>();
 builder.Services.AddScoped<AddArtworkUseCase>();
+builder.Services.AddScoped<UpdateArtworkUseCase>();
 builder.Services.AddScoped<GetAllArtworksUseCase>();
 builder.Services.AddScoped<DeleteArtworkUseCase>();
 

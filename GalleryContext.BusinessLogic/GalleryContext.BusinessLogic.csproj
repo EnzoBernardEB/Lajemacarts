@@ -1,9 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\Common.targets" />
+    <Import Project="..\Common.targets"/>
 
     <ItemGroup>
-      <ProjectReference Include="..\SharedKernel.Core\SharedKernel.Core.csproj" />
+        <ProjectReference Include="..\SharedKernel.Core\SharedKernel.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1"/>
     </ItemGroup>
 
 </Project>

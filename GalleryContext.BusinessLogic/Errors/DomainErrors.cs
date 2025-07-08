@@ -12,8 +12,10 @@ public static class DomainErrors
     public static readonly Error NameTooLong = new Error("Artwork.Name.TooLong", "Artwork name cannot exceed 255 characters.");
     public static readonly Error MaterialRequired = new Error("Artwork.MaterialRequired", "Artwork must have at least one material.");
     public static readonly Error DescriptionRequired = new Error("Artwork.DescriptionRequired", "Artwork description is required.");
-
     public static readonly Error DimensionsMustBePositive = new Error("Artwork.Dimensions", "Dimensions must be positive values.");
     public static readonly Error NotFound = new Error("Artwork.NotFound", "The artwork with the specified ID was not found.");
+
+    public static readonly Error ConcurrencyConflict =
+        new Error("Artwork.Concurrency", "The artwork was modified by another user. Please reload and try again.");
   }
 }

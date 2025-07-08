@@ -1,0 +1,72 @@
+﻿# Nom du workflow
+name: CI Lajemacarts
+
+# Déclencheurs du workflow
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # Job pour le build et les tests du backend .NET
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # L'action lit automatiquement le fichier global.json pour installer la bonne version du SDK.
+      - name: Setup .NET from global.json
+        uses: actions/setup-dotnet@v4
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+  # Job pour le build et les tests du frontend Angular
+  build-and-test-frontend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        # Le chemin correct vers le projet Angular
+        working-directory: ./Client/lajemacarts
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Installation de pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          # Mise en cache des dépendances gérées par pnpm
+          cache: 'pnpm'
+          cache-dependency-path: Client/lajemacarts/pnpm-lock.yaml
+
+      - name: Install dependencies with pnpm
+        run: pnpm install
+
+      - name: Build Angular
+        run: pnpm run build --configuration production
+      
+      # CORRECTION: Utilisation de la commande de test correcte pour Vitest
+      - name: Test Angular
+        run: pnpm run test -- run
