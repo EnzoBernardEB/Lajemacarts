@@ -13,7 +13,6 @@ jobs:
   build-and-test-backend:
     runs-on: ubuntu-latest
     
-    # Définit le répertoire de travail par défaut pour ce job
     defaults:
       run:
         working-directory: ./
@@ -22,11 +21,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # Utilisation de la version LTS de .NET 8 pour la stabilité
-      - name: Setup .NET 8
+      # L'action lit automatiquement le fichier global.json pour installer la bonne version du SDK.
+      - name: Setup .NET from global.json
         uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -41,7 +38,6 @@ jobs:
   build-and-test-frontend:
     runs-on: ubuntu-latest
 
-    # Définit le répertoire de travail par défaut pour toutes les étapes de ce job
     defaults:
       run:
         # Le chemin correct vers le projet Angular
@@ -50,20 +46,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      # Installation de pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          # Mise en cache des dépendances npm pour accélérer les builds futurs
-          cache: 'npm'
-          cache-dependency-path: 'Client/lajemacarts/package-lock.json'
+          # Mise en cache des dépendances gérées par pnpm
+          cache: 'pnpm'
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Install dependencies with pnpm
+        run: pnpm install
 
       - name: Build Angular
-        run: npm run build -- --configuration production
+        run: pnpm run build -- --configuration production
 
       - name: Test Angular
-        run: npm run test -- --watch=false --browsers=ChromeHeadless
+        run: pnpm run test -- --watch=false --browsers=ChromeHeadless
