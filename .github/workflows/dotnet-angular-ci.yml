@@ -1,5 +1,7 @@
-﻿name: CI Lajemacarts
+﻿# Nom du workflow
+name: CI Lajemacarts
 
+# Déclencheurs du workflow
 on:
   push:
     branches: [ "main" ]
@@ -7,47 +9,61 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # Job pour le build et les tests du backend .NET
   build-and-test-backend:
     runs-on: ubuntu-latest
+    
+    # Définit le répertoire de travail par défaut pour ce job
+    defaults:
+      run:
+        working-directory: ./
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup .NET
+      # Utilisation de la version LTS de .NET 8 pour la stabilité
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
-      
+          dotnet-version: '8.0.x'
+
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
-      
+
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
 
+  # Job pour le build et les tests du frontend Angular
   build-and-test-frontend:
     runs-on: ubuntu-latest
+
+    # Définit le répertoire de travail par défaut pour toutes les étapes de ce job
+    defaults:
+      run:
+        # Le chemin correct vers le projet Angular
+        working-directory: ./Client/lajemacarts
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+          # Mise en cache des dépendances npm pour accélérer les builds futurs
+          cache: 'npm'
+          cache-dependency-path: 'Client/lajemacarts/package-lock.json'
 
       - name: Install npm dependencies
         run: npm install
-        working-directory: ./client 
-      
+
       - name: Build Angular
         run: npm run build -- --configuration production
-        working-directory: ./client
-      
+
       - name: Test Angular
         run: npm run test -- --watch=false --browsers=ChromeHeadless
-        working-directory: ./client
