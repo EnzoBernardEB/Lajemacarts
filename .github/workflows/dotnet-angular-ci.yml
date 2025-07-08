@@ -50,4 +50,4 @@ jobs:
       
       - name: Test Angular
         run: npm run test -- --watch=false --browsers=ChromeHeadless
-        working-directory: ./frontend
+        working-directory: ./client
