@@ -63,11 +63,10 @@ jobs:
 
       - name: Install dependencies with pnpm
         run: pnpm install
-      
-      # CORRECTION: Suppression du double tiret (--) redondant
+
       - name: Build Angular
         run: pnpm run build --configuration production
       
-      # CORRECTION: Suppression du double tiret (--) redondant
+      # CORRECTION: Utilisation de la commande de test correcte pour Vitest
       - name: Test Angular
-        run: pnpm run test --watch=false --browsers=ChromeHeadless
+        run: pnpm run test -- run
