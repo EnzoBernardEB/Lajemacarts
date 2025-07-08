@@ -59,14 +59,15 @@ jobs:
           node-version: '20.x'
           # Mise en cache des dépendances gérées par pnpm
           cache: 'pnpm'
-          # CORRECTION: Spécifier le chemin exact du fichier de lock pour le cache
           cache-dependency-path: Client/lajemacarts/pnpm-lock.yaml
 
       - name: Install dependencies with pnpm
         run: pnpm install
-
+      
+      # CORRECTION: Suppression du double tiret (--) redondant
       - name: Build Angular
-        run: pnpm run build -- --configuration production
-
+        run: pnpm run build --configuration production
+      
+      # CORRECTION: Suppression du double tiret (--) redondant
       - name: Test Angular
-        run: pnpm run test -- --watch=false --browsers=ChromeHeadless
+        run: pnpm run test --watch=false --browsers=ChromeHeadless
