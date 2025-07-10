@@ -1,6 +1,6 @@
 
 import '@angular/compiler';
-import '@analogjs/vitest-angular/setup-zone';
+import 'jest-preset-angular/setup-jest';
 
 import {
   BrowserTestingModule,

@@ -3,8 +3,7 @@
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
     "types": [
-      "jasmine",
-      "vitest/globals"
+      "jest"
     ],
     "target": "es2016"
   },
