@@ -1,0 +1,108 @@
+<form [formGroup]="artworkForm" (ngSubmit)="submitForm()" class="artwork-form-container">
+  <h2 class="form-title">{{ artwork ? 'Modifier' : 'Ajouter' }} une œuvre</h2>
+
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Informations Générales</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="card-grid">
+      <mat-form-field>
+        <mat-label>Nom de l'œuvre</mat-label>
+        <input matInput formControlName="name">
+        @if (artworkForm.get('name')?.hasError('required')) {
+          <mat-error>Le nom est requis.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Description</mat-label>
+        <textarea matInput formControlName="description" rows="5"></textarea>
+        @if (artworkForm.get('description')?.hasError('required')) {
+          <mat-error>La description est requise.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Type d'œuvre</mat-label>
+        <mat-select formControlName="artworkType">
+          @for (type of objectKeys(ArtworkType); track type) {
+            <mat-option [value]="ArtworkType[type]">{{ ArtworkType[type] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Matériaux</mat-label>
+        <mat-select formControlName="materialIds" multiple>
+          @for (material of materials; track material.id) {
+            <mat-option [value]="material.id">{{ material.name }}</mat-option>
+          }
+        </mat-select>
+        @if (artworkForm.get('materialIds')?.hasError('required')) {
+          <mat-error>Au moins un matériau est requis.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Année de création</mat-label>
+        <input matInput type="number" formControlName="creationYear">
+      </mat-form-field>
+
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card formGroupName="dimensions">
+    <mat-card-header>
+      <mat-card-title>Dimensions & Poids</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="card-grid">
+      <mat-form-field>
+        <mat-label>Longueur</mat-label>
+        <input matInput type="number" formControlName="dimL">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Largeur</mat-label>
+        <input matInput type="number" formControlName="dimW">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Hauteur</mat-label>
+        <input matInput type="number" formControlName="dimH">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Unité</mat-label>
+        <mat-select formControlName="dimUnit">
+          @for (unit of objectKeys(DimensionUnit); track unit) {
+            <mat-option [value]="DimensionUnit[unit]">{{ DimensionUnit[unit] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Catégorie de poids</mat-label>
+        <mat-select formControlName="weightCategory">
+          @for (cat of objectKeys(WeightCategory); track cat) {
+            <mat-option [value]="WeightCategory[cat]">{{ WeightCategory[cat] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Prix</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>Prix (EUR)</mat-label>
+        <input matInput type="number" formControlName="price">
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="form-actions">
+    <button mat-stroked-button type="button">Annuler</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="artworkForm.invalid">
+      {{ artwork ? 'Enregistrer les modifications' : 'Créer l\'œuvre' }}
+    </button>
+  </div>
+</form>

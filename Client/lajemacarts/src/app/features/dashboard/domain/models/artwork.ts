@@ -21,6 +21,19 @@ interface ArtworkProps {
     ArtworkStatus;
 }
 
+interface ArtworkUpdateProps {
+  name: string;
+  description: string;
+  artworkType: ArtworkType;
+  materialIds: number[];
+  dimL: number;
+  dimW: number;
+  dimH: number;
+  dimUnit: DimensionUnit;
+  weightCategory: WeightCategory;
+  price: number;
+  creationYear: number;
+}
 
 export class Artwork {
   public readonly id: string;
@@ -96,8 +109,63 @@ export class Artwork {
     return Result.success<Artwork>(artwork);
   }
 
-  
+  public update(props: ArtworkUpdateProps): Result<Artwork> {
+    const nameResult = ArtworkName.create(props.name);
+    const descriptionResult = ArtworkDescription.create(props.description);
+    const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
+    const priceResult = Money.create(props.price);
 
+    if (!props.materialIds || props.materialIds.length === 0) {
+      return Result.failure<Artwork>(DomainErrors.Artwork.MaterialRequired);
+    }
+
+    const combinedResult = Result.combine([
+      nameResult,
+      descriptionResult,
+      dimensionsResult,
+      priceResult
+    ]);
+
+    if (combinedResult.isFailure) {
+      return Result.failure<Artwork>(combinedResult.error!);
+    }
+
+    // On crée une nouvelle instance avec l'ID existant mais les nouvelles propriétés validées
+    const updatedArtwork = new Artwork({
+      id: this.id, // On conserve l'ID original
+      name: nameResult.getValue(),
+      description: descriptionResult.getValue(),
+      artworkType: props.artworkType,
+      materialIds: props.materialIds,
+      dimensions: dimensionsResult.getValue(),
+      weightCategory: props.weightCategory,
+      price: priceResult.getValue(),
+      creationYear: props.creationYear,
+      status: this.status, // Le statut n'est pas modifié via ce formulaire
+    });
+
+    return Result.success<Artwork>(updatedArtwork);
+  }
+
+  public static hydrate(data: ArtworkDto): Artwork {
+    return new Artwork({
+      id: data.id,
+      name: ArtworkName.hydrate(data.name.value),
+      description: ArtworkDescription.hydrate(data.description.value),
+      artworkType: data.artworkType,
+      materialIds: data.materialIds,
+      dimensions: Dimensions.hydrate(
+        data.dimensions.length,
+        data.dimensions.width,
+        data.dimensions.height,
+        data.dimensions.unit
+      ),
+      weightCategory: data.weightCategory,
+      price: Money.hydrate(data.price.amount),
+      creationYear: data.creationYear,
+      status: data.status,
+    });
+  }
 
   public isPublishable(): boolean {
     return this.status === 'Draft';

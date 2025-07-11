@@ -38,5 +38,18 @@ export const ArtworkStore = signalStore(
         tap(() => patchState(store, setFulfilled())),
       ),
     ),
+    updateArtwork: rxMethod<Artwork>(
+      pipe(
+        tap(() => patchState(store, setPending())),
+        switchMap((artwork) => artworkGateway.update(artwork).pipe(
+          tap((updatedArtwork) => {
+            patchState(store, (state) => ({
+              artworks: state.artworks.map(a => a.id === updatedArtwork.id ? updatedArtwork : a)
+            }));
+          }),
+        )),
+        tap(() => patchState(store, setFulfilled())),
+      ),
+    ),
   })),
 );

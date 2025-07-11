@@ -5,4 +5,6 @@ export abstract class ArtworkGateway {
   abstract getAll(): Observable<Artwork[]>
 
   abstract add(artwork: Artwork): Observable<Artwork>
+
+  abstract update(artwork: Artwork): Observable<Artwork>
 }

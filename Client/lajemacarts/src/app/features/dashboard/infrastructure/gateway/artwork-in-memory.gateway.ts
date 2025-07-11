@@ -16,6 +16,15 @@ export class ArtworkInMemoryGateway extends ArtworkGateway {
     return of(artwork).pipe(delay(300));
   }
 
+  update(artworkToUpdate: Artwork): Observable<Artwork> {
+    const index = this.artworks.findIndex(a => a.id === artworkToUpdate.id);
+    if (index > -1) {
+      this.artworks[index] = artworkToUpdate;
+    }
+    return of(artworkToUpdate);
+  }
+
+
   feedWith(artworks: Artwork[]) {
     this.artworks = artworks;
   }

@@ -1,93 +1,121 @@
-import {Component} from '@angular/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output} from '@angular/core';
 import {MatCard, MatCardContent, MatCardHeader, MatCardTitle} from '@angular/material/card';
-import {MatFormField, MatLabel} from '@angular/material/form-field';
-import {AsyncPipe} from '@angular/common';
-import {MatOption, MatSelect} from '@angular/material/select';
-import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {MatButton} from '@angular/material/button';
-import {of} from 'rxjs';
+import {MatError, MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatInput} from '@angular/material/input';
+import {MatOption, MatSelect} from '@angular/material/select';
+import {MatButton} from '@angular/material/button';
+import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Artwork} from '../../../domain/models/artwork';
+
+export type ArtworkFormValue = ReturnType<ArtworkFormComponent['artworkForm']['getRawValue']>;
 
 @Component({
   selector: 'lajemacarts-artworks-form',
+  standalone: true,
   imports: [
+    ReactiveFormsModule,
     MatCard,
     MatCardHeader,
     MatCardTitle,
     MatCardContent,
     MatFormField,
     MatLabel,
+    MatInput,
     MatSelect,
-    AsyncPipe,
-    ReactiveFormsModule,
     MatOption,
     MatButton,
-    MatInput
+    MatError,
   ],
-  template: `
-    <form [formGroup]="artworkForm" (ngSubmit)="save()">
+  templateUrl: './artwork-form.component.html',
+  styles: `
+    :host {
+      display: block;
+      padding: 24px;
+    }
 
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Informations Générales</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field>
-            <mat-label>Nom de l'œuvre</mat-label>
-            <input matInput formControlName="name">
-          </mat-form-field>
+    .artwork-form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-          <mat-form-field>
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description"></textarea>
-          </mat-form-field>
+    .form-title {
+      color: #3f51b5; /* Primary color */
+    }
 
-          <mat-form-field>
-            <mat-label>Matériaux</mat-label>
-            <mat-select formControlName="materialIds" multiple>
-              @for (material of materials$ |
-                async; track material.id) {
-                <mat-option [value]="material.id">{{ material.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </mat-card-content>
-      </mat-card>
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
 
-      <mat-card formGroupName="dimensions">
-      </mat-card>
+    .full-width {
+      grid-column: 1 / -1;
+    }
 
-      <div class="form-actions">
-        <button mat-stroked-button type="button" (click)="cancel()">Annuler</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="artworkForm.invalid">
-          Enregistrer
-        </button>
-      </div>
-    </form>
+    mat-form-field {
+      width: 100%;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
   `,
-  styles: ``,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ArtworkFormComponent {
+export class ArtworkFormComponent implements OnInit {
+  @Input() artwork?: Artwork;
+  @Input() materials: { id: number; name: string }[] | null = [];
+  @Output() save = new EventEmitter<ArtworkFormValue>();
 
-  artworkForm = new FormGroup({
-    name: new FormControl(''),
-    description: new FormControl(''),
-    materialIds: new FormControl(''),
-    dimensions: new FormControl(''),
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  readonly objectKeys = Object.keys;
+
+  artworkForm = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+    description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
+    artworkType: ["", [Validators.required]],
+    materialIds: [[] as number[], [Validators.required, Validators.minLength(1)]],
+    dimensions: this.fb.group({
+      dimL: [0, [Validators.required, Validators.min(1)]],
+      dimW: [0, [Validators.required, Validators.min(1)]],
+      dimH: [0, [Validators.required, Validators.min(1)]],
+      dimUnit: ['cm', [Validators.required]],
+    }),
+    weightCategory: ["WeightCategory.Light", [Validators.required]],
+    price: [0, [Validators.required, Validators.min(0)]],
+    creationYear: [new Date().getFullYear(), [Validators.required, Validators.min(1900)]],
   });
-  readonly materials$ =
-    of([
-      {id: 1, name: 'Résine'},
-      {id: 2, name: 'Bois'},
-      {id: 3, name: 'Pierre'},
-      {id: 4, name: 'Feuille'},
-    ])
 
-  cancel() {
-
+  ngOnInit() {
+    if (this.artwork) {
+      this.artworkForm.patchValue({
+        name: this.artwork.name.value,
+        description: this.artwork.description.value,
+        artworkType: this.artwork.artworkType,
+        materialIds: this.artwork.materialIds,
+        dimensions: {
+          dimL: this.artwork.dimensions.length,
+          dimW: this.artwork.dimensions.width,
+          dimH: this.artwork.dimensions.height,
+          dimUnit: this.artwork.dimensions.unit,
+        },
+        weightCategory: this.artwork.weightCategory,
+        price: this.artwork.price.amount,
+        creationYear: this.artwork.creationYear,
+      });
+    }
   }
 
-  save() {
-    console.warn(this.artworkForm.value);
+  submitForm() {
+    if (this.artworkForm.invalid) {
+      this.artworkForm.markAllAsTouched();
+      return;
+    }
+    this.save.emit(this.artworkForm.getRawValue());
   }
 }

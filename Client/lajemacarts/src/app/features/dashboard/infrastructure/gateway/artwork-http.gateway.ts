@@ -11,19 +11,7 @@ export class ArtworkHttpGateway extends ArtworkGateway {
   private baseUrl: string = inject(API_URL);
 
   static toArtwork(dto: ArtworkDto): Artwork {
-    return Artwork.create({
-      name: dto.name.value,
-      description: dto.description.value,
-      artworkType: dto.artworkType,
-      materialIds: dto.materialIds,
-      dimL: dto.dimensions.length,
-      dimW: dto.dimensions.width,
-      dimH: dto.dimensions.height,
-      dimUnit: dto.dimensions.unit,
-      weightCategory: dto.weightCategory,
-      price: dto.price.amount,
-      creationYear: dto.creationYear,
-    }).getValue();
+    return Artwork.hydrate(dto);
   }
 
   static toArtworkDto(artwork: Artwork): ArtworkDto {
@@ -56,6 +44,13 @@ export class ArtworkHttpGateway extends ArtworkGateway {
     const artworkDto: ArtworkDto = ArtworkHttpGateway.toArtworkDto(artwork);
     return this.httpClient.post<ArtworkDto>(`${this.baseUrl}/artworks`, artworkDto).pipe(
       map(dto => ArtworkHttpGateway.toArtwork(dto))
+    );
+  }
+
+  update(artwork: Artwork): Observable<Artwork> {
+    const artworkDto: ArtworkDto = ArtworkHttpGateway.toArtworkDto(artwork);
+    return this.httpClient.put<ArtworkDto>(`${this.baseUrl}/artworks/${artwork.id}`, artworkDto).pipe(
+      map(dto => Artwork.hydrate(dto))
     );
   }
 }
