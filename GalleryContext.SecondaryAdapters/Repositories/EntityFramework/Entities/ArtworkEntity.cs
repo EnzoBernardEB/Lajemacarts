@@ -9,7 +9,7 @@ public class ArtworkEntity()
 {
   private ArtworkEntity(
       Guid id,
-      string name, string description, int artworkTypeId, List<int> materialIds,
+      string name, string description, List<ArtworkType> artworkTypes, List<int> materialIds,
       decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
       WeightCategory weightCategory, decimal price, int creationYear, ArtworkStatus status,
       DateTime createdAt, DateTime updatedAt, bool isDeleted, uint version) : this()
@@ -17,7 +17,7 @@ public class ArtworkEntity()
     Id = id;
     Name = name;
     Description = description;
-    ArtworkTypeId = artworkTypeId;
+    ArtworkTypes = artworkTypes;
     MaterialIds = materialIds ?? new List<int>();
     DimensionL = dimensionL;
     DimensionW = dimensionW;
@@ -41,6 +41,8 @@ public class ArtworkEntity()
   public string Description { get; set; } = string.Empty;
 
   public int ArtworkTypeId { get; set; }
+  
+  public List<ArtworkType> ArtworkTypes { get; set; } = new List<ArtworkType>();
 
   public List<int> MaterialIds { get; set; } = new List<int>();
 
@@ -78,7 +80,7 @@ public class ArtworkEntity()
         artwork.Id,
         artwork.Name,
         artwork.Description,
-        artwork.ArtworkTypeId,
+        artwork.ArtworkTypes,
         artwork.MaterialIds,
         artwork.Dimensions.Length,
         artwork.Dimensions.Width,

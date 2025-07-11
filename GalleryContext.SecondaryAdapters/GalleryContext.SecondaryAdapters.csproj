@@ -16,4 +16,8 @@
       <EmbeddedResource Include="Resources\lajemacarts-db-ddl.sql" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Migrations\" />
+    </ItemGroup>
+
 </Project>

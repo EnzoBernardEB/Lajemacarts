@@ -29,7 +29,7 @@ public class EfArtworkRepositoryTest(GalleryIntegrationTestFixture fixture)
     var artworkResult = Artwork.Create(
         ArtworkName.Create(name).Value,
         ArtworkDescription.Create("A valid description.").Value,
-        1, new List<int>
+        [ArtworkType.Board,ArtworkType.IncenseFountain], new List<int>
         {
           1,
         },

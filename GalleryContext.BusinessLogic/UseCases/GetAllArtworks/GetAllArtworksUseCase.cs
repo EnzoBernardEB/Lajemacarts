@@ -16,7 +16,7 @@ public class GetAllArtworksUseCase(IArtworkRepository artworkRepository)
           a.Id,
           a.Name.Value,
           a.Description.Value,
-          a.ArtworkTypeId,
+          a.ArtworkTypes,
           a.MaterialIds,
           a.Dimensions.Length,
           a.Dimensions.Width,

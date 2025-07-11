@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace GalleryContext.PrimaryAdapters.EndToEndTests;
@@ -36,7 +37,7 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     var result = Artwork.Create(
         ArtworkName.Create(name).Value,
         ArtworkDescription.Create("Valid Description").Value,
-        1, new List<int>
+        [ArtworkType.Board, ArtworkType.Sculpture], new List<int>
         {
           1,
         },
@@ -56,7 +57,7 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     var command = new AddArtworkCommand(
         "The Persistence of Memory",
         "Surrealist painting by Salvador Dalí.",
-        1,
+        [ArtworkType.Lamp, ArtworkType.IncenseFountain],
         new List<int>
         {
           1,
@@ -165,7 +166,7 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     }
 
     var request = new UpdateArtworkRequest(
-        "Updated via E2E", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        "Updated via E2E", artwork.Description.Value, artwork.ArtworkTypes, artwork.MaterialIds,
         artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
         artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear, initialVersion
     );
@@ -191,7 +192,7 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     var nonExistentId = Guid.NewGuid();
     var artwork = CreateValidTestArtwork();
     var request = new UpdateArtworkRequest(
-        artwork.Name.Value, artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        artwork.Name.Value, artwork.Description.Value, artwork.ArtworkTypes, artwork.MaterialIds,
         artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
         artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear, artwork.Version
     );
@@ -216,13 +217,13 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
     }
 
     var user1Request = new UpdateArtworkRequest(
-        "Update by User 1", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        "Update by User 1", artwork.Description.Value, artwork.ArtworkTypes, artwork.MaterialIds,
         artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
         artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear,
         initialVersion
     );
     var user2Request = new UpdateArtworkRequest(
-        "Update by User 2", artwork.Description.Value, artwork.ArtworkTypeId, artwork.MaterialIds,
+        "Update by User 2", artwork.Description.Value, artwork.ArtworkTypes, artwork.MaterialIds,
         artwork.Dimensions.Length, artwork.Dimensions.Width, artwork.Dimensions.Height,
         artwork.Dimensions.Unit, artwork.WeightCategory, artwork.Price.Amount, artwork.CreationYear,
         initialVersion
@@ -238,4 +239,24 @@ public class ArtworkControllerTest : IClassFixture<E2ETestFixture<Program>>, IDi
 
     responseUser2.StatusCode.Should().Be(HttpStatusCode.Conflict);
   }
+  [Fact]
+  public async Task GetArtworkTypes_ShouldReturnOkAndAllTypes()
+  {
+    using var client = _fixture.CreateClient();
+      
+    
+    var response = await client.GetAsync("/api/v1/artworks/types");
+    
+    response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+    var returnedTypes = await response.Content.ReadFromJsonAsync<List<ArtworkTypeResponse>>();
+    returnedTypes.Should().NotBeNull();
+
+    returnedTypes.Should().HaveCount(Enum.GetValues<ArtworkType>().Length);
+
+    returnedTypes.Should().ContainEquivalentOf(new ArtworkTypeResponse("PedestalTable", "Guéridon"));
+    returnedTypes.Should().ContainEquivalentOf(new ArtworkTypeResponse("IncenseFountain", "Fontaine à Encens"));
+  }
+  internal record ArtworkTypeResponse(string key, string value);
+
 }

@@ -80,7 +80,7 @@ export class ArtworkFormComponent {
       {id: 1, name: 'Résine'},
       {id: 2, name: 'Bois'},
       {id: 3, name: 'Pierre'},
-      {id: 3, name: 'Feuille'},
+      {id: 4, name: 'Feuille'},
     ])
 
   cancel() {

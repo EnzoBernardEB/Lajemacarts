@@ -45,7 +45,7 @@ public class EfArtworkRepository(ArtworkDbContext dbContext) : IArtworkRepositor
   private static Artwork MapToDomain(ArtworkEntity entity)
   {
     return Artwork.Hydrate(
-        entity.Id, entity.Name, entity.Description, entity.ArtworkTypeId, entity.MaterialIds,
+        entity.Id, entity.Name, entity.Description, entity.ArtworkTypes, entity.MaterialIds,
         entity.DimensionL, entity.DimensionW, entity.DimensionH, entity.DimensionUnit,
         entity.WeightCategory, entity.Price, entity.CreationYear,
         entity.Status, entity.IsDeleted, entity.CreatedAt, entity.UpdatedAt, entity.Version
