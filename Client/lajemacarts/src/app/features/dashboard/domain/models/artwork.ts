@@ -96,25 +96,7 @@ export class Artwork {
     return Result.success<Artwork>(artwork);
   }
 
-  public static hydrate(data: ArtworkDto): Artwork {
-    return new Artwork({
-      id: data.id,
-      name: ArtworkName.hydrate(data.name.value),
-      description: ArtworkDescription.hydrate(data.description.value),
-      artworkType: data.artworkType,
-      materialIds: data.materialIds,
-      dimensions: Dimensions.hydrate(
-        data.dimensions.length,
-        data.dimensions.width,
-        data.dimensions.height,
-        data.dimensions.unit
-      ),
-      weightCategory: data.weightCategory,
-      price: Money.hydrate(data.price.amount),
-      creationYear: data.creationYear,
-      status: data.status,
-    });
-  }
+  
 
 
   public isPublishable(): boolean {
