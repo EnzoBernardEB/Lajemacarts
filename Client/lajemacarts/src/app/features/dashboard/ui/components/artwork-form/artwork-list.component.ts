@@ -8,7 +8,7 @@ import {artworkGatewayProvider} from '../../../infrastructure/providers/artwork-
   providers: [ArtworkStore, artworkGatewayProvider],
   template: `liste des artworks test
   @for (artwork of artworkStore.artworks(); track artwork.id) {
-    {{ artwork.name }}
+    {{ artwork.name.value }}
   }
   `,
   styles: ``,

@@ -1,16 +1,22 @@
-import {Observable, of} from 'rxjs';
-import {Artwork} from '../../domain/models/artwork';
+import {delay, Observable, of} from 'rxjs';
 import {ArtworkGateway} from '../../domain/ ports/artwork.gateway';
+import {Artwork} from '../../domain/models/artwork';
+
 
 export class ArtworkInMemoryGateway extends ArtworkGateway {
+  private artworks: Artwork[] = [];
+
   getAll(): Observable<Artwork[]> {
-    const artworks: Artwork[] = [
-      // ... mock data
-    ];
-    return of(artworks);
+    return of(this.artworks).pipe(delay(500));
   }
 
-  add(): Observable<Artwork> {
-    throw new Error('Method not implemented.');
+
+  add(artwork: Artwork): Observable<Artwork> {
+    this.artworks = [...this.artworks, artwork];
+    return of(artwork).pipe(delay(300));
+  }
+
+  feedWith(artworks: Artwork[]) {
+    this.artworks = artworks;
   }
 }
