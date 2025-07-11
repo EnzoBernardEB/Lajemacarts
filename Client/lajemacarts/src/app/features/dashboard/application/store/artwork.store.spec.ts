@@ -3,7 +3,7 @@ import {ArtworkStore} from './artwork.store';
 import {delay, of} from 'rxjs';
 import {provideHttpClient} from '@angular/common/http';
 import {mockArtworks, singleMockArtwork} from './artwork.store.data';
-import {ArtworkGateway} from '../ ports/artwork.gateway';
+import {ArtworkGateway} from '../../domain/ ports/artwork.gateway';
 
 describe('ArtworkStore', () => {
   let artworkGatewaySpy: jest.Mocked<ArtworkGateway>;

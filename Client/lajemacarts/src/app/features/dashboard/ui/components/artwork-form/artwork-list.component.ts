@@ -1,6 +1,6 @@
 import {Component, inject, OnInit} from '@angular/core';
-import {ArtworkStore} from '../../../domain/store/artwork.store';
 import {artworkGatewayProvider} from '../../../infrastructure/providers/artwork-gateway.provider';
+import {ArtworkStore} from '../../../application/store/artwork.store';
 
 @Component({
   selector: 'lajemacarts-artworks-list',

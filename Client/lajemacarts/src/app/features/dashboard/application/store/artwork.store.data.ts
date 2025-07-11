@@ -1,4 +1,4 @@
-import {Artwork} from '../models/artwork';
+import {Artwork} from '../../domain/models/artwork';
 
 export const mockArtworks: Artwork[] = [
   Artwork.create({

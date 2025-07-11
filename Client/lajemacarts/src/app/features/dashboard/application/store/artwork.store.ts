@@ -1,10 +1,10 @@
 import {inject, InjectionToken} from '@angular/core';
 import {patchState, signalStore, withMethods, withState} from '@ngrx/signals';
 import {setFulfilled, setPending, withRequestStatus} from '../../../../shared/store/request-status.features';
-import {Artwork} from '../models/artwork';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
 import {pipe, switchMap, tap} from 'rxjs';
-import {ArtworkGateway} from '../ ports/artwork.gateway';
+import {Artwork} from '../../domain/models/artwork';
+import {ArtworkGateway} from '../../domain/ ports/artwork.gateway';
 
 export type ArtworkState = {
   artworks: Array<Artwork>
