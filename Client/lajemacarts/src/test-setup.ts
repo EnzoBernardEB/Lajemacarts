@@ -1,15 +1,8 @@
+import {setupZoneTestEnv} from 'jest-preset-angular/setup-env/zone';
 
-import '@angular/compiler';
-import 'jest-preset-angular/setup-jest';
+setupZoneTestEnv();
 
-import {
-  BrowserTestingModule,
-  platformBrowserTesting,
-} from '@angular/platform-browser/testing';
-import { getTestBed } from '@angular/core/testing';
-
-getTestBed().initTestEnvironment(
-  BrowserTestingModule,
-  platformBrowserTesting()
-);
-
+Object.defineProperty(global.crypto, 'randomUUID', {
+  value: () => 'mock-uuid',
+  writable: true,
+});

@@ -1,5 +1,5 @@
-import {computed, inject} from '@angular/core';
-import {patchState, signalStore, withComputed, withMethods, withState} from '@ngrx/signals';
+import {inject, InjectionToken} from '@angular/core';
+import {patchState, signalStore, withMethods, withState} from '@ngrx/signals';
 import {setFulfilled, setPending, withRequestStatus} from '../../../../shared/store/request-status.features';
 import {Artwork} from '../models/artwork';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
@@ -10,16 +10,15 @@ export type ArtworkState = {
   artworks: Array<Artwork>
 }
 
-const initialState: ArtworkState = {
-  artworks: [],
-};
+
+export const initialArtworkState = new InjectionToken<ArtworkState>('ArtworkStateToken', {
+  factory: () => ({artworks: []})
+});
 
 export const ArtworkStore = signalStore(
-  withState<ArtworkState>(initialState),
+  withState<ArtworkState>(() => inject(initialArtworkState)),
   withRequestStatus(),
-  withComputed(({artworks}) => ({
-    artworks: computed(() => artworks()),
-  })),
+
   withMethods((store, artworkGateway = inject(ArtworkGateway)) => ({
     loadArtworks: rxMethod<void>(
       pipe(
@@ -30,14 +29,14 @@ export const ArtworkStore = signalStore(
         tap(() => patchState(store, setFulfilled())),
       ),
     ),
-    // addArtwork: rxMethod<Artwork>(
-    //   pipe(
-    //     tap(() => patchState(store, setPending())),
-    //     switchMap((artwork) => artworkGateway.add(artwork).pipe(
-    //       tap((newArtwork) => patch - state(store, (state) => ({artworks: [...state.artworks, newArtwork]}))),
-    //     )),
-    //     tap(() => patchState(store, setFulfilled())),
-    //   ),
-    // ),
+    addArtwork: rxMethod<Artwork>(
+      pipe(
+        tap(() => patchState(store, setPending())),
+        switchMap((artwork) => artworkGateway.add(artwork).pipe(
+          tap((newArtwork) => patchState(store, (state) => ({artworks: [...state.artworks, newArtwork]}))),
+        )),
+        tap(() => patchState(store, setFulfilled())),
+      ),
+    ),
   })),
 );

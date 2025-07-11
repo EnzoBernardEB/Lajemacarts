@@ -1,30 +1,6 @@
-import {Provider} from '@angular/core';
-import {ArtworkHttpGateway} from '../gateway/artwork-http.gateway';
-import {ArtworkInMemoryGateway} from '../gateway/artwork-in-memory.gateway';
-import {ArtworkGateway} from '../../domain/ ports/artwork.gateway';
-import {Artwork} from '../../domain/models/artwork';
+import {Artwork} from '../models/artwork';
 
-const gatewayType: 'http' | 'in-memory' = 'http';
-
-const httpProvider: Provider = {
-  provide: ArtworkGateway,
-  useClass: ArtworkHttpGateway,
-};
-
-const inMemoryProvider: Provider = {
-  provide: ArtworkGateway,
-  useFactory: () => {
-    const gateway = new ArtworkInMemoryGateway();
-
-    gateway.feedWith(ARTWORKS_DATA);
-
-    return gateway;
-  },
-};
-export const artworkGatewayProvider: Provider = gatewayType !== 'http' ? httpProvider : inMemoryProvider;
-
-
-const ARTWORKS_DATA: Artwork[] = [
+export const mockArtworks: Artwork[] = [
   Artwork.create({
     name: 'Vase en Terre Cuite',
     description: 'Un vase artisanal tourné à la main, parfait pour des fleurs séchées.',
@@ -56,3 +32,5 @@ const ARTWORKS_DATA: Artwork[] = [
     creationYear: 2024,
   }).getValue(),
 ];
+
+export const singleMockArtwork: Artwork = mockArtworks[0];

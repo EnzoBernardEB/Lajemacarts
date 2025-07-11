@@ -16,7 +16,7 @@ export class ArtworkHttpGateway extends ArtworkGateway {
     )
   }
 
-  add(): Observable<Artwork> {
+  add(artwork: Artwork): Observable<Artwork> {
     throw new Error('Method not implemented.');
   }
 }

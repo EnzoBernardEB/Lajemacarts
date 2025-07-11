@@ -1,3 +1,5 @@
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {DashboardPage} from './dashboard.page';
@@ -8,7 +10,20 @@ describe('DashboardPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DashboardPage]
+      imports: [DashboardPage],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {},
+            url: of([]),
+            params: of({}),
+            queryParams: of({}),
+            fragment: of(''),
+            data: of({}),
+          },
+        },
+      ],
     })
       .compileComponents();
 
