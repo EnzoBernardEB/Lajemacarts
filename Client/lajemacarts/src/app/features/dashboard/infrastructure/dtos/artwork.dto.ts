@@ -1,11 +1,12 @@
-import {ArtworkStatus, ArtworkType, DimensionUnit, WeightCategory} from '../../domain/models/enums/enums';
+import {ArtworkStatus, DimensionUnit, WeightCategory} from '../../domain/models/enums/enums';
+import {ArtworkMaterial} from '../../domain/models/value-objects/artwork-material';
 
 export interface ArtworkDto {
   id: string;
   name: { value: string };
   description: { value: string };
-  artworkType: ArtworkType;
-  materialIds: number[];
+  artworkTypeId: string;
+  materials: ArtworkMaterial[]
   dimensions: {
     length: number;
     width: number;
@@ -13,7 +14,7 @@ export interface ArtworkDto {
     unit: DimensionUnit;
   };
   weightCategory: WeightCategory;
-  price: { amount: number };
+  hoursSpent: number;
   creationYear: number;
   status: ArtworkStatus;
 }

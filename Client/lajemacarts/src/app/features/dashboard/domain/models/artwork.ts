@@ -1,21 +1,23 @@
-import {ArtworkName} from "./value-objects/artwork-name";
+import {Name} from "./value-objects/name";
 import {ArtworkDescription} from './value-objects/artwork-descrription';
-import {ArtworkStatus, ArtworkType, DimensionUnit, WeightCategory} from "./enums/enums";
+import {ArtworkStatus, DimensionUnit, WeightCategory} from "./enums/enums";
 import {Dimensions} from './value-objects/dimensions.model';
 import {Money} from "./value-objects/money.model";
 import {Result} from '../../../../shared/core/result';
 import {ArtworkDto} from '../../infrastructure/dtos/artwork.dto';
-import {DomainErrors} from '../../../../shared/domain/errors/domain-errors';
+import {ArtworkMaterial} from './value-objects/artwork-material';
+import {ArtworkType} from './artwork-type';
+import {Material} from './material';
 
 interface ArtworkProps {
   id: string;
-  name: ArtworkName;
+  name: Name;
   description: ArtworkDescription;
-  artworkType: ArtworkType;
-  materialIds: number[];
+  artworkTypeId: string;
+  materials: ArtworkMaterial[];
   dimensions: Dimensions;
   weightCategory: WeightCategory;
-  price: Money;
+  hoursSpent: number;
   creationYear: number;
   status:
     ArtworkStatus;
@@ -24,26 +26,26 @@ interface ArtworkProps {
 interface ArtworkUpdateProps {
   name: string;
   description: string;
-  artworkType: ArtworkType;
-  materialIds: number[];
+  artworkTypeId: string;
+  materials: ArtworkMaterial[];
   dimL: number;
   dimW: number;
   dimH: number;
   dimUnit: DimensionUnit;
   weightCategory: WeightCategory;
-  price: number;
+  hoursSpent: number;
   creationYear: number;
 }
 
 export class Artwork {
   public readonly id: string;
-  public readonly name: ArtworkName;
+  public readonly name: Name;
   public readonly description: ArtworkDescription;
-  public readonly artworkType: ArtworkType;
-  public readonly materialIds: number[];
+  public readonly artworkTypeId: string;
+  public readonly materials: ArtworkMaterial[];
   public readonly dimensions: Dimensions;
   public readonly weightCategory: WeightCategory;
-  public readonly price: Money;
+  public readonly hoursSpent: number;
   public readonly creationYear: number;
   public readonly status: ArtworkStatus;
 
@@ -51,42 +53,59 @@ export class Artwork {
     this.id = props.id;
     this.name = props.name;
     this.description = props.description;
-    this.artworkType = props.artworkType;
-    this.materialIds = props.materialIds;
+    this.artworkTypeId = props.artworkTypeId;
+    this.materials = props.materials;
     this.dimensions = props.dimensions;
     this.weightCategory = props.weightCategory;
-    this.price = props.price;
+    this.hoursSpent = props.hoursSpent;
     this.creationYear = props.creationYear;
     this.status = props.status;
+  }
+
+  public calculatePrice(type: ArtworkType, materialDetails: Material[]): Money {
+
+    const materialCost = this.materials.reduce((total, item) => {
+      const materialInfo = materialDetails.find(m => m.id === item.materialId);
+      if (!materialInfo) {
+        console.warn(`Material with id ${item.materialId} not found.`);
+        return total;
+      }
+      const cost = materialInfo.pricePerUnit.amount * item.quantity;
+      return total + cost;
+    }, 0);
+
+    const laborCost = type.basePrice.amount * this.hoursSpent;
+
+    const totalBaseCost = materialCost + laborCost;
+
+    const finalPriceAmount = totalBaseCost * type.profitMultiplier;
+
+    return Money.create(finalPriceAmount).getValue();
   }
 
   public static create(props: {
     name: string;
     description: string;
-    artworkType: ArtworkType;
-    materialIds: number[];
+    artworkTypeId: string;
+    materials: { materialId: string; quantity: number }[];
     dimL: number;
     dimW: number;
     dimH: number;
     dimUnit: DimensionUnit;
     weightCategory: WeightCategory;
-    price: number;
+    hoursSpent: number;
     creationYear: number;
   }): Result<Artwork> {
-    const nameResult = ArtworkName.create(props.name);
+    const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
-    const priceResult = Money.create(props.price);
-
-    if (!props.materialIds || props.materialIds.length === 0) {
-      return Result.failure<Artwork>(DomainErrors.Artwork.MaterialRequired);
-    }
+    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
 
     const combinedResult = Result.combine([
       nameResult,
       descriptionResult,
       dimensionsResult,
-      priceResult
+      ...materialResults
     ]);
 
     if (combinedResult.isFailure) {
@@ -97,11 +116,11 @@ export class Artwork {
       id: crypto.randomUUID(),
       name: nameResult.getValue(),
       description: descriptionResult.getValue(),
-      artworkType: props.artworkType,
-      materialIds: props.materialIds,
+      artworkTypeId: props.artworkTypeId,
+      materials: materialResults.map(r => r.getValue()),
       dimensions: dimensionsResult.getValue(),
       weightCategory: props.weightCategory,
-      price: priceResult.getValue(),
+      hoursSpent: props.hoursSpent,
       creationYear: props.creationYear,
       status: 'Draft',
     });
@@ -110,38 +129,35 @@ export class Artwork {
   }
 
   public update(props: ArtworkUpdateProps): Result<Artwork> {
-    const nameResult = ArtworkName.create(props.name);
+    const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
-    const priceResult = Money.create(props.price);
 
-    if (!props.materialIds || props.materialIds.length === 0) {
-      return Result.failure<Artwork>(DomainErrors.Artwork.MaterialRequired);
-    }
+    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
+
 
     const combinedResult = Result.combine([
       nameResult,
       descriptionResult,
       dimensionsResult,
-      priceResult
+      ...materialResults
     ]);
 
     if (combinedResult.isFailure) {
       return Result.failure<Artwork>(combinedResult.error!);
     }
 
-    // On crée une nouvelle instance avec l'ID existant mais les nouvelles propriétés validées
     const updatedArtwork = new Artwork({
-      id: this.id, // On conserve l'ID original
+      id: this.id,
       name: nameResult.getValue(),
       description: descriptionResult.getValue(),
-      artworkType: props.artworkType,
-      materialIds: props.materialIds,
+      artworkTypeId: props.artworkTypeId,
+      materials: props.materials,
       dimensions: dimensionsResult.getValue(),
       weightCategory: props.weightCategory,
-      price: priceResult.getValue(),
+      hoursSpent: props.hoursSpent,
       creationYear: props.creationYear,
-      status: this.status, // Le statut n'est pas modifié via ce formulaire
+      status: this.status,
     });
 
     return Result.success<Artwork>(updatedArtwork);
@@ -150,10 +166,10 @@ export class Artwork {
   public static hydrate(data: ArtworkDto): Artwork {
     return new Artwork({
       id: data.id,
-      name: ArtworkName.hydrate(data.name.value),
+      name: Name.hydrate(data.name.value),
       description: ArtworkDescription.hydrate(data.description.value),
-      artworkType: data.artworkType,
-      materialIds: data.materialIds,
+      artworkTypeId: data.artworkTypeId,
+      materials: data.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity).getValue()),
       dimensions: Dimensions.hydrate(
         data.dimensions.length,
         data.dimensions.width,
@@ -161,7 +177,7 @@ export class Artwork {
         data.dimensions.unit
       ),
       weightCategory: data.weightCategory,
-      price: Money.hydrate(data.price.amount),
+      hoursSpent: data.hoursSpent,
       creationYear: data.creationYear,
       status: data.status,
     });

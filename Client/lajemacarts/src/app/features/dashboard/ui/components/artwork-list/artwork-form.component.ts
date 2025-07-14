@@ -1,114 +1,102 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output} from '@angular/core';
+import {Component, effect, inject, input, output} from '@angular/core';
 import {MatCard, MatCardContent, MatCardHeader, MatCardTitle} from '@angular/material/card';
-import {MatError, MatFormField, MatLabel} from '@angular/material/form-field';
-import {MatInput} from '@angular/material/input';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatOption, MatSelect} from '@angular/material/select';
-import {MatButton} from '@angular/material/button';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {MatButton} from '@angular/material/button';
+import {MatInput} from '@angular/material/input';
+import {DimensionUnit, WeightCategory} from '../../../domain/models/enums/enums';
 import {Artwork} from '../../../domain/models/artwork';
+import {ArtworkMaterial} from '../../../domain/models/value-objects/artwork-material';
+import {Material} from '../../../domain/models/material';
+import {ArtworkType} from '../../../domain/models/artwork-type';
 
 export type ArtworkFormValue = ReturnType<ArtworkFormComponent['artworkForm']['getRawValue']>;
 
 @Component({
   selector: 'lajemacarts-artworks-form',
-  standalone: true,
   imports: [
-    ReactiveFormsModule,
     MatCard,
     MatCardHeader,
     MatCardTitle,
     MatCardContent,
     MatFormField,
     MatLabel,
-    MatInput,
     MatSelect,
+    ReactiveFormsModule,
     MatOption,
     MatButton,
-    MatError,
+    MatInput
   ],
   templateUrl: './artwork-form.component.html',
-  styles: `
-    :host {
-      display: block;
-      padding: 24px;
-    }
+  styles: `.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
 
-    .artwork-form-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+  .full-width {
+    grid-column: 1 / -1;
+  }
 
-    .form-title {
-      color: #3f51b5; /* Primary color */
-    }
-
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 20px;
-    }
-  `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }`,
 })
-export class ArtworkFormComponent implements OnInit {
-  @Input() artwork?: Artwork;
-  @Input() materials: { id: number; name: string }[] | null = [];
-  @Output() save = new EventEmitter<ArtworkFormValue>();
+export class ArtworkFormComponent {
+  artwork = input<Artwork>();
+  materials = input<Material[]>();
+  artworktypes = input<ArtworkType[]>();
+  save = output<ArtworkFormValue>()
 
   private readonly fb = inject(NonNullableFormBuilder);
 
-  readonly objectKeys = Object.keys;
+  readonly weightCategories: WeightCategory[] = ['LessThan1kg', 'Between1And5kg', 'MoreThan5kg'];
+  readonly dimensionUnits: DimensionUnit[] = ['cm', 'in'];
+
 
   artworkForm = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-    description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
-    artworkType: ["", [Validators.required]],
-    materialIds: [[] as number[], [Validators.required, Validators.minLength(1)]],
+    name: ['', [Validators.required]],
+    description: ['', [Validators.required]],
+    artworkTypeId: ['', [Validators.required]],
+    materialIds: [[] as ArtworkMaterial[], [Validators.required]],
+    creationYear: [new Date().getFullYear(), [Validators.required, Validators.min(1900)]],
+    weightCategory: ['' as WeightCategory, [Validators.required]],
+    hourSpent: [0, [Validators.required, Validators.min(0)]],
     dimensions: this.fb.group({
       dimL: [0, [Validators.required, Validators.min(1)]],
       dimW: [0, [Validators.required, Validators.min(1)]],
       dimH: [0, [Validators.required, Validators.min(1)]],
-      dimUnit: ['cm', [Validators.required]],
+      dimUnit: ['cm' as DimensionUnit, [Validators.required]],
     }),
-    weightCategory: ["WeightCategory.Light", [Validators.required]],
-    price: [0, [Validators.required, Validators.min(0)]],
-    creationYear: [new Date().getFullYear(), [Validators.required, Validators.min(1900)]],
   });
 
-  ngOnInit() {
-    if (this.artwork) {
-      this.artworkForm.patchValue({
-        name: this.artwork.name.value,
-        description: this.artwork.description.value,
-        artworkType: this.artwork.artworkType,
-        materialIds: this.artwork.materialIds,
-        dimensions: {
-          dimL: this.artwork.dimensions.length,
-          dimW: this.artwork.dimensions.width,
-          dimH: this.artwork.dimensions.height,
-          dimUnit: this.artwork.dimensions.unit,
-        },
-        weightCategory: this.artwork.weightCategory,
-        price: this.artwork.price.amount,
-        creationYear: this.artwork.creationYear,
-      });
-    }
+  constructor() {
+    effect(() => {
+      const currentArtwork = this.artwork();
+      if (currentArtwork) {
+        this.artworkForm.patchValue({
+          name: currentArtwork.name.value,
+          description: currentArtwork.description.value,
+          artworkTypeId: currentArtwork.artworkTypeId,
+          materialIds: currentArtwork.materials,
+          creationYear: currentArtwork.creationYear,
+          weightCategory: currentArtwork.weightCategory,
+          hourSpent: currentArtwork.hoursSpent,
+          dimensions: {
+            dimL: currentArtwork.dimensions.length,
+            dimW: currentArtwork.dimensions.width,
+            dimH: currentArtwork.dimensions.height,
+            dimUnit: currentArtwork.dimensions.unit,
+          }
+        });
+      } else {
+        this.artworkForm.reset();
+      }
+    });
   }
 
   submitForm() {
@@ -117,5 +105,9 @@ export class ArtworkFormComponent implements OnInit {
       return;
     }
     this.save.emit(this.artworkForm.getRawValue());
+  }
+
+  cancel() {
+    this.artworkForm.reset();
   }
 }

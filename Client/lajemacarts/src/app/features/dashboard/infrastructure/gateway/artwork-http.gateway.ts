@@ -7,6 +7,10 @@ import {API_URL} from "../../../../core/api-url.token";
 import {ArtworkDto} from '../dtos/artwork.dto';
 
 export class ArtworkHttpGateway extends ArtworkGateway {
+  override delete(id: string): Observable<void> {
+    throw new Error('Method not implemented.');
+  }
+
   private httpClient: HttpClient = inject(HttpClient);
   private baseUrl: string = inject(API_URL);
 
@@ -19,8 +23,8 @@ export class ArtworkHttpGateway extends ArtworkGateway {
       id: artwork.id,
       name: {value: artwork.name.value},
       description: {value: artwork.description.value},
-      artworkType: artwork.artworkType,
-      materialIds: artwork.materialIds,
+      artworkTypeId: artwork.artworkTypeId,
+      materials: artwork.materials,
       dimensions: {
         length: artwork.dimensions.length,
         width: artwork.dimensions.width,
@@ -28,7 +32,7 @@ export class ArtworkHttpGateway extends ArtworkGateway {
         unit: artwork.dimensions.unit,
       },
       weightCategory: artwork.weightCategory,
-      price: {amount: artwork.price.amount},
+      hoursSpent: artwork.hoursSpent,
       creationYear: artwork.creationYear,
       status: artwork.status,
     };

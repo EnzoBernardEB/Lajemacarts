@@ -7,4 +7,7 @@ export abstract class ArtworkGateway {
   abstract add(artwork: Artwork): Observable<Artwork>
 
   abstract update(artwork: Artwork): Observable<Artwork>
+
+  abstract delete(id: string): Observable<void>;
+
 }

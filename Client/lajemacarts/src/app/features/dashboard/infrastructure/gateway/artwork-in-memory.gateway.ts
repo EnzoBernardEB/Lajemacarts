@@ -4,6 +4,10 @@ import {Artwork} from '../../domain/models/artwork';
 
 
 export class ArtworkInMemoryGateway extends ArtworkGateway {
+  override delete(id: string): Observable<void> {
+    throw new Error('Method not implemented.');
+  }
+
   private artworks: Artwork[] = [];
 
   getAll(): Observable<Artwork[]> {
