@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, signal} from '@angular/core';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 import {MatToolbar} from '@angular/material/toolbar';
 import {MatButton} from '@angular/material/button';
+import {NgOptimizedImage} from '@angular/common';
 
 interface NavLink {
   path: string;
@@ -15,11 +16,15 @@ interface NavLink {
     RouterLink,
     RouterLinkActive,
     MatToolbar,
-    MatButton
+    MatButton,
+    NgOptimizedImage
   ],
   template: `
     <mat-toolbar color="primary">
-      <span>Lajemac-Arts</span>
+      <a routerLink="/" class="logo-title">
+        <img ngSrc="logo.svg" alt="" width="32" height="32">
+        <span>Lajemac-Arts</span>
+      </a>
       <span class="spacer"></span>
       @for (link of navLinks(); track link.path) {
         <a
@@ -35,6 +40,14 @@ interface NavLink {
     </mat-toolbar>
   `,
   styles: `
+    .logo-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+    }
+
     .spacer {
       flex: 1 1 auto;
     }
@@ -50,5 +63,6 @@ export class NavMenuComponent {
     {path: '/accueil', label: 'Accueil'},
     {path: '/galerie', label: 'Galerie', disabled: true},
     {path: '/tableau-de-bord', label: 'Tableau de bord'},
+    {path: '/dashboard/materials', label: 'Matériaux'},
   ]);
 }

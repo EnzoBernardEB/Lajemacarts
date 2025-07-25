@@ -1,7 +1,320 @@
-@use 'styles/colors';
-@import 'styles/colors';
+// src/styles.scss
+
+// Utiliser le point d'entrée SASS principal pour Material 3
+@use '@angular/material' as mat;
+
+// Inclure les styles de base (une seule fois)
+@include mat.core();
+
+// --- THÈME MATERIAL SIMPLE ---
+// 1. Définir un thème dark standard
+$lajemacarts-dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+  ),
+));
+
+// 2. Appliquer le thème
+@include mat.all-component-themes($lajemacarts-dark-theme);
+
+// Variables CSS personnalisées pour correspondre au design
+:root {
+  --bg-primary: #0f172a; // Fond principal très sombre
+  --bg-secondary: #1e293b; // Fond des cartes/éléments
+  --bg-tertiary: #334155; // Fond des éléments interactifs
+  --text-primary: #f8fafc; // Texte principal blanc
+  --text-secondary: #cbd5e1; // Texte secondaire gris clair
+  --text-muted: #94a3b8; // Texte en sourdine
+  --border-color: #334155; // Couleur des bordures
+  --accent-blue: #3b82f6; // Bleu pour les accents
+  --accent-green: #10b981; // Vert pour les status positifs
+  --accent-orange: #f59e0b; // Orange pour les warnings
+  --accent-red: #ef4444; // Rouge pour les erreurs
+}
+
+/* --- Styles Globaux Responsifs --- */
+
+html {
+  // Taille de base responsive selon la largeur de l'écran
+  font-size: 14px; // Taille de base pour petits écrans
+
+  // Tablettes
+  @media (min-width: 768px) {
+    font-size: 16px;
+  }
+
+  // Desktop standard (1920px)
+  @media (min-width: 1200px) {
+    font-size: 18px;
+  }
+
+  // Grands écrans (27" et plus - 2560px+)
+  @media (min-width: 2560px) {
+    font-size: 20px;
+  }
+
+  // Très grands écrans (32" et plus - 3840px+)
+  @media (min-width: 3840px) {
+    font-size: 22px;
+  }
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
 
 body {
-  background-color: $color-background;
-  color: $color-text-light;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+
+  // Améliorer la lisibilité
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Overrides Material pour correspondre au design --- */
+
+// Override global pour forcer les couleurs personnalisées
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) var(--bg-primary);
+}
+
+// Body et HTML avec nos couleurs
+html, body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+// Toolbar/Header
+.mat-toolbar {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+// Buttons
+.mat-mdc-button {
+  color: var(--text-secondary) !important;
+
+  &:hover {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+  }
+}
+
+.mat-mdc-raised-button, .mat-mdc-unelevated-button {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+
+  &:hover {
+    background-color: var(--bg-tertiary) !important;
+  }
+}
+
+// Cards
+.mat-mdc-card {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+
+  .mat-mdc-card-header, .mat-mdc-card-content, .mat-mdc-card-actions {
+    color: var(--text-primary) !important;
+  }
+}
+
+// Tables
+.mat-mdc-table {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+
+  .mat-mdc-header-row {
+    background-color: var(--bg-tertiary) !important;
+
+    .mat-mdc-header-cell {
+      color: var(--text-primary) !important;
+      border-bottom: 1px solid var(--border-color) !important;
+    }
+  }
+
+  .mat-mdc-row {
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+
+    .mat-mdc-cell {
+      color: var(--text-primary) !important;
+      border-bottom: 1px solid var(--border-color) !important;
+    }
+  }
+}
+
+// Form fields
+.mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+  }
+
+  .mat-mdc-floating-label {
+    color: var(--text-secondary) !important;
+  }
+
+  input, textarea {
+    color: var(--text-primary) !important;
+    caret-color: var(--accent-blue) !important;
+  }
+
+  .mat-mdc-form-field-underline {
+    background-color: var(--border-color) !important;
+  }
+
+  &.mat-focused {
+    .mat-mdc-floating-label {
+      color: var(--accent-blue) !important;
+    }
+  }
+}
+
+// Lists
+.mat-mdc-list {
+  background-color: transparent !important;
+
+  .mat-mdc-list-item {
+    color: var(--text-secondary) !important;
+
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .mat-mdc-list-item-content {
+      border-bottom: 1px solid var(--border-color) !important;
+    }
+  }
+}
+
+// Menus et overlays
+.mat-mdc-menu-panel {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+
+  .mat-mdc-menu-item {
+    color: var(--text-primary) !important;
+
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+  }
+}
+
+// Dialogs
+.mat-mdc-dialog-container {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+// Snackbars
+.mat-mdc-snack-bar-container {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+// Tooltips
+.mat-mdc-tooltip {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+// Ajuster les composants Material pour grands écrans
+@media (min-width: 2560px) {
+  .mat-mdc-button {
+    font-size: 1rem !important;
+    padding: 0.75rem 1.5rem !important;
+  }
+
+  .mat-toolbar {
+    min-height: 80px !important;
+
+    .mat-toolbar-row {
+      min-height: 80px !important;
+    }
+  }
+
+  .mat-mdc-list-item {
+    height: 60px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .mat-mdc-card {
+    .mat-mdc-card-title {
+      font-size: 1.5rem !important;
+    }
+
+    .mat-mdc-card-content {
+      font-size: 1rem !important;
+    }
+  }
+
+  // Ajuster les icônes
+  .mat-icon {
+    font-size: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* --- Classes utilitaires pour différentes tailles --- */
+
+.text-small {
+  font-size: 0.875rem;
+}
+
+.text-base {
+  font-size: 1rem;
+}
+
+.text-large {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}
+
+/* --- Espacement responsive --- */
+
+.container {
+  padding: 1rem;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 1200px) {
+    padding: 2rem;
+  }
+
+  @media (min-width: 2560px) {
+    padding: 3rem;
+  }
 }

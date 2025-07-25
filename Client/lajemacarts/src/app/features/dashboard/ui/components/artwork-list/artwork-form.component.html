@@ -11,7 +11,7 @@
 
       <mat-form-field>
         <mat-label>Type d'œuvre</mat-label>
-        <mat-select formControlName="artworkType">
+        <mat-select formControlName="artworkTypeId">
           @for (type of artworktypes(); track type) {
             <mat-option [value]="type">{{ type }}</mat-option>
           }

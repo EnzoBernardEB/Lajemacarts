@@ -64,13 +64,14 @@ export class ArtworkFormComponent {
     artworkTypeId: ['', [Validators.required]],
     materialIds: [[] as ArtworkMaterial[], [Validators.required]],
     creationYear: [new Date().getFullYear(), [Validators.required, Validators.min(1900)]],
-    weightCategory: ['' as WeightCategory, [Validators.required]],
     hourSpent: [0, [Validators.required, Validators.min(0)]],
+    price: [0, [Validators.required, Validators.min(0)]],
     dimensions: this.fb.group({
       dimL: [0, [Validators.required, Validators.min(1)]],
       dimW: [0, [Validators.required, Validators.min(1)]],
       dimH: [0, [Validators.required, Validators.min(1)]],
       dimUnit: ['cm' as DimensionUnit, [Validators.required]],
+      weightCategory: ['' as WeightCategory, [Validators.required]],
     }),
   });
 
@@ -84,13 +85,13 @@ export class ArtworkFormComponent {
           artworkTypeId: currentArtwork.artworkTypeId,
           materialIds: currentArtwork.materials,
           creationYear: currentArtwork.creationYear,
-          weightCategory: currentArtwork.weightCategory,
           hourSpent: currentArtwork.hoursSpent,
           dimensions: {
             dimL: currentArtwork.dimensions.length,
             dimW: currentArtwork.dimensions.width,
             dimH: currentArtwork.dimensions.height,
             dimUnit: currentArtwork.dimensions.unit,
+            weightCategory: currentArtwork.weightCategory,
           }
         });
       } else {

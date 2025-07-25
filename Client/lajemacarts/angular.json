@@ -46,7 +46,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "maximumWarning": "1000kB",
                   "maximumError": "1MB"
                 },
                 {
@@ -101,7 +101,9 @@
   },
   "schematics": {
     "@schematics/angular:component": {
-      "type": "component"
+      "type": "component",
+      "inlineTemplate": true,
+      "inlineStyle": true
     },
     "@schematics/angular:directive": {
       "type": "directive"
