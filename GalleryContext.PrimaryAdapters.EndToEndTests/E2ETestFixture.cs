@@ -26,6 +26,8 @@ public sealed class E2ETestFixture<TStartup> : WebApplicationFactory<TStartup>, 
     var t = _container.ConnectionString();
     ArtworkDbContext = new ArtworkDbContext(
         new DbContextOptionsBuilder<ArtworkDbContext>().UseNpgsql(_container.ConnectionString()).Options);
+    
+    await ArtworkDbContext.Database.MigrateAsync();
   }
 
   public new async Task DisposeAsync()
@@ -52,12 +54,6 @@ public sealed class E2ETestFixture<TStartup> : WebApplicationFactory<TStartup>, 
     serviceCollection.Remove(descriptor!);
     serviceCollection.AddDbContext<ArtworkDbContext>(options =>
         options.UseNpgsql(_container.ConnectionString()));
-
-    using var serviceScope = serviceCollection.BuildServiceProvider().CreateScope();
-    var scopedServices = serviceScope.ServiceProvider;
-    var db = scopedServices.GetRequiredService<ArtworkDbContext>();
-    db.Database.EnsureCreated();
-    db.SaveChanges();
   }
 
   private void ReplaceArtworkRepository(IServiceCollection serviceCollection)
