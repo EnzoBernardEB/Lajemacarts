@@ -41,7 +41,7 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
         </ng-container>
 
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <th mat-header-cell *matHeaderCellDef>Nom</th>
           <td mat-cell *matCellDef="let artwork">
             <div class="artwork-name">
               <span class="name-text">{{ artwork.name }}</span>
@@ -50,21 +50,21 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
         </ng-container>
 
         <ng-container matColumnDef="artworkType">
-          <th mat-header-cell *matHeaderCellDef>Artwork Type</th>
+          <th mat-header-cell *matHeaderCellDef>Type d'Œuvre</th>
           <td mat-cell *matCellDef="let artwork">
             <span class="artwork-type">{{ artwork.typeName }}</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="creationYear">
-          <th mat-header-cell *matHeaderCellDef>Creation Year</th>
+          <th mat-header-cell *matHeaderCellDef>Année de Création</th>
           <td mat-cell *matCellDef="let artwork">
             <span class="creation-year">{{ artwork.year }}</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
           <td mat-cell *matCellDef="let artwork">
             <mat-chip [class]="artwork.statusClass" class="status-chip">
               {{ artwork.statusLabel }}
@@ -73,7 +73,7 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
         </ng-container>
 
         <ng-container matColumnDef="calculatedPrice">
-          <th mat-header-cell *matHeaderCellDef>Calculated Price</th>
+          <th mat-header-cell *matHeaderCellDef>Prix Calculé</th>
           <td mat-cell *matCellDef="let artwork">
             <span class="price">{{ artwork.formattedPrice }}</span>
           </td>
@@ -93,7 +93,7 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
               mat-icon-button
               [matMenuTriggerFor]="actionsMenu"
               [matMenuTriggerData]="{ artwork: artwork }"
-              [attr.aria-label]="'More actions for ' + artwork.name">
+              [attr.aria-label]="'Plus d\\\'actions pour ' + artwork.name">
               <mat-icon>more_vert</mat-icon>
             </button>
           </td>
@@ -112,11 +112,11 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
         <ng-template matMenuContent let-artwork="artwork">
           <button mat-menu-item (click)="editArtwork.emit(artwork)">
             <mat-icon>edit</mat-icon>
-            <span>Edit</span>
+            <span>Modifier</span>
           </button>
           <button mat-menu-item (click)="viewArtwork.emit(artwork)">
             <mat-icon>visibility</mat-icon>
-            <span>View Details</span>
+            <span>Voir les Détails</span>
           </button>
           <mat-divider></mat-divider>
           <button
@@ -124,7 +124,7 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
             class="delete-action"
             (click)="deleteArtwork.emit(artwork)">
             <mat-icon>delete</mat-icon>
-            <span>Delete</span>
+            <span>Supprimer</span>
           </button>
         </ng-template>
       </mat-menu>

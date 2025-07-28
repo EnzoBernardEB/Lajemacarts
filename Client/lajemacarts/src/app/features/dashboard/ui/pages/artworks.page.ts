@@ -40,23 +40,23 @@ import {ArtworkListViewModel, ArtworkMapper} from '../mappers/artwork.mapper';
       @if (store.isPending()) {
         <div class="loading-container">
           <mat-spinner diameter="40"></mat-spinner>
-          <p>Loading artworks...</p>
+          <p>Chargement des œuvres...</p>
         </div>
       } @else if (store.filteredCount() === 0) {
         @if (store.hasActiveFilters()) {
           <lajemacarts-artworks-empty-state
             icon="search_off"
-            title="No artworks match your filters"
-            message="Try adjusting your search criteria or clear the filters."
-            buttonText="Clear Filters"
+            title="Aucune œuvre ne correspond à vos filtres"
+            message="Essayez d'ajuster vos critères de recherche ou effacez les filtres."
+            buttonText="Effacer les Filtres"
             buttonIcon="clear"
             buttonColor="accent"
             (buttonClick)="store.clearFilters()"/>
         } @else {
           <lajemacarts-artworks-empty-state
-            title="No artworks yet"
-            message="Start building your collection by adding your first artwork."
-            buttonText="Add Your First Artwork"
+            title="Aucune œuvre pour le moment"
+            message="Commencez à construire votre collection en ajoutant votre première œuvre."
+            buttonText="Ajouter votre première Œuvre"
             (buttonClick)="onAddArtwork()"/>
         }
       } @else {
@@ -69,18 +69,18 @@ import {ArtworkListViewModel, ArtworkMapper} from '../mappers/artwork.mapper';
 
         <div class="results-info">
           <p>
-            Showing {{ store.filteredCount() }} of {{ store.totalArtworks() }} artworks
+            Affichage de {{ store.filteredCount() }} sur {{ store.totalArtworks() }} œuvres
             @if (store.hasActiveFilters()) {
               <button mat-button class="clear-filters-btn" (click)="store.clearFilters()">
                 <mat-icon>clear</mat-icon>
-                Clear filters
+                Effacer les filtres
               </button>
             }
           </p>
 
           <div class="statistics">
-            <p>Total value: {{ statistics().formattedTotalValue }}</p>
-            <p>Average price: {{ statistics().formattedAveragePrice }}</p>
+            <p>Valeur totale : {{ statistics().formattedTotalValue }}</p>
+            <p>Prix moyen : {{ statistics().formattedAveragePrice }}</p>
           </div>
         </div>
       }

@@ -60,7 +60,7 @@ import {MatIconModule} from '@angular/material/icon';
   `
 })
 export class ArtworksHeaderComponent {
-  title = input<string>('My Artworks');
-  addButtonText = input<string>('Add New Artwork');
+  title = input<string>('Mes Œuvres');
+  addButtonText = input<string>('Ajouter une Œuvre');
   addClicked = output<void>();
 }

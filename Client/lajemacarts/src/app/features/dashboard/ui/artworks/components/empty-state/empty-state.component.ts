@@ -75,10 +75,10 @@ import {MatButtonModule} from '@angular/material/button';
 })
 export class ArtworksEmptyStateComponent {
   icon = input<string>('palette');
-  title = input<string>('No artworks found');
+  title = input<string>('Aucune œuvre trouvée');
   message = input<string>('');
   showButton = input<boolean>(true);
-  buttonText = input<string>('Add Artwork');
+  buttonText = input<string>('Ajouter une œuvre');
   buttonIcon = input<string>('add');
   buttonColor = input<'primary' | 'accent' | 'warn'>('primary');
 
