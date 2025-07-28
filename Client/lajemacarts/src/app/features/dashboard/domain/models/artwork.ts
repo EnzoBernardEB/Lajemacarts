@@ -63,7 +63,6 @@ export class Artwork {
   }
 
   public calculatePrice(type: ArtworkType, materialDetails: Material[]): Money {
-
     const materialCost = this.materials.reduce((total, item) => {
       const materialInfo = materialDetails.find(m => m.id === item.materialId);
       if (!materialInfo) {

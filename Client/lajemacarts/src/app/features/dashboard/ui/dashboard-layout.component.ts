@@ -4,7 +4,7 @@ import {MatSidenavModule} from '@angular/material/sidenav';
 import {MatListModule} from '@angular/material/list';
 import {MatIconModule} from '@angular/material/icon';
 import {CommonModule} from '@angular/common';
-import {SidebarComponent} from '../sidebar/sidebar.component';
+import {SidebarComponent} from './components/sidebar/sidebar.component';
 
 @Component({
   selector: 'lajemacarts-dashboard-layout',
@@ -37,7 +37,7 @@ import {SidebarComponent} from '../sidebar/sidebar.component';
     }
 
     .content-shell {
-      background-color: var(--bg-primary);
+      background-color: var(--color-background);
       flex: 1;
       overflow-y: auto;
       padding: 1rem;
@@ -55,7 +55,6 @@ import {SidebarComponent} from '../sidebar/sidebar.component';
         padding: 3rem 4rem;
       }
 
-      // Ajuster la largeur maximale du contenu pour éviter des lignes trop longues
       @media (min-width: 2560px) {
         .container {
           max-width: 1400px;

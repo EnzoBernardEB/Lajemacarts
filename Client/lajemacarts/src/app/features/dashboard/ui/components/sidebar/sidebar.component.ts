@@ -16,19 +16,15 @@ import {RouterLink, RouterLinkActive} from '@angular/router';
     <div class="sidebar">
       <div>
         <mat-nav-list>
-          <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
-            <mat-icon matListItemIcon>dashboard</mat-icon>
-            <span matListItemTitle>Dashboard</span>
-          </a>
-          <a mat-list-item routerLink="/artworks" routerLinkActive="active-link">
+          <a class="menu-item" mat-list-item routerLink="/artworks" routerLinkActive="active-link">
             <mat-icon matListItemIcon>palette</mat-icon>
             <span matListItemTitle>Artworks</span>
           </a>
-          <a mat-list-item routerLink="/materials" routerLinkActive="active-link">
+          <a class="menu-item" mat-list-item routerLink="/materials" routerLinkActive="active-link">
             <mat-icon matListItemIcon>layers</mat-icon>
             <span matListItemTitle>Materials</span>
           </a>
-          <a mat-list-item routerLink="/types" routerLinkActive="active-link">
+          <a class="menu-item" mat-list-item routerLink="/types" routerLinkActive="active-link">
             <mat-icon matListItemIcon>category</mat-icon>
             <span matListItemTitle>Types</span>
           </a>

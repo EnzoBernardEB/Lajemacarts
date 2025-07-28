@@ -20,7 +20,7 @@ interface NavLink {
     NgOptimizedImage
   ],
   template: `
-    <mat-toolbar color="primary">
+    <mat-toolbar class="nav-menu">
       <a routerLink="/" class="logo-title">
         <img ngSrc="logo.svg" alt="" width="32" height="32">
         <span>Lajemac-Arts</span>
@@ -40,6 +40,10 @@ interface NavLink {
     </mat-toolbar>
   `,
   styles: `
+    .nav-menu {
+      border-bottom: 1px solid var(--border-color);
+    }
+
     .logo-title {
       display: flex;
       align-items: center;

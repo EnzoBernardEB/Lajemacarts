@@ -4,7 +4,7 @@ import {Routes} from '@angular/router';
 import {HomeComponent} from './features/home/home.component';
 import {NotFoundComponent} from './core/not-found/not-found.component';
 import {LayoutComponent} from './core/layout/layout.component';
-import {DashboardLayoutComponent} from './features/dashboard/ui/components/layout/dashboard-layout.component';
+import {DashboardLayoutComponent} from './features/dashboard/ui/dashboard-layout.component';
 
 export const routes: Routes = [
   {
