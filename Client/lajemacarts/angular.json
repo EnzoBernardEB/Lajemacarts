@@ -102,8 +102,7 @@
   "schematics": {
     "@schematics/angular:component": {
       "type": "component",
-      "inlineTemplate": true,
-      "inlineStyle": true
+      "inlineTemplate": true
     },
     "@schematics/angular:directive": {
       "type": "directive"
