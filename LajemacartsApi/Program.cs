@@ -46,7 +46,13 @@ builder.Services.AddSwaggerGen(options =>
     Description = "API pour la gestion d'oeuvres d'art (Lajemacarts)",
   });
 });
-var connectionString = builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase");
+var connectionString = builder.Configuration.GetConnectionString("DATABASE_CONNECTION_STRING") 
+                       ?? Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    connectionString = builder.Configuration.GetConnectionString("GalleryConnectionLocalDatabase");
+}
 
 builder.Services.AddDbContext<ArtworkDbContext>(options => options.UseNpgsql(connectionString)
 );
@@ -73,6 +79,12 @@ app.UseRouting();
 app.UseCors(myAllowSpecificOrigins);
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ArtworkDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.Run();
 

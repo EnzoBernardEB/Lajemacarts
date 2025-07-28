@@ -38,7 +38,7 @@ public class DeleteArtworkUseCaseTest
   public async Task ExecuteAsync_ShouldDeleteArtwork_WhenArtworkExists()
   {
     var artwork = Artwork.Create(ArtworkName.Create("Artwork to Delete").Value,
-        ArtworkDescription.Create("Description").Value, 1, new List<int>
+        ArtworkDescription.Create("Description").Value, [ArtworkType.Board], new List<int>
         {
           1,
         },

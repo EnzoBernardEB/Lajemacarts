@@ -1,1 +1,122 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+@use 'styles_theme-colors' as theme;
+@import 'styles/colors';
+
+
+@include mat.core();
+
+$lajemacarts-dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: theme.$primary-palette,
+    tertiary: theme.$tertiary-palette,
+  ),
+  typography: (
+    brand-family: 'Inter',
+    plain-family: 'Inter',
+  ),
+  density: (
+    scale: 0,
+  ),
+));
+
+@include mat.all-component-themes($lajemacarts-dark-theme);
+
+:root {
+  --bg-primary: #{mat.get-theme-color($lajemacarts-dark-theme, surface)};
+  --bg-secondary: #{mat.get-theme-color($lajemacarts-dark-theme, surface-container)};
+  --bg-tertiary: #{mat.get-theme-color($lajemacarts-dark-theme, surface-container-high)};
+  --text-primary: #{mat.get-theme-color($lajemacarts-dark-theme, on-surface)};
+  --text-secondary: #{mat.get-theme-color($lajemacarts-dark-theme, on-surface-variant)};
+  --border-color: #{mat.get-theme-color($lajemacarts-dark-theme, outline-variant)};
+
+  --color-background: #{$color-background};
+  --color-text-light: #{$color-text-light};
+  --color-text-dark: #{$color-text-dark};
+  --color-accent: #{$color-accent};
+}
+
+@include mat.toolbar-overrides((
+  container-background-color: $color-background,
+  container-text-color: $color-text-light,
+));
+
+html {
+  font-size: 14px;
+
+  @media (min-width: 768px) {
+    font-size: 16px;
+  }
+
+  @media (min-width: 1200px) {
+    font-size: 18px;
+  }
+
+  @media (min-width: 2560px) {
+    font-size: 20px;
+  }
+
+  @media (min-width: 3840px) {
+    font-size: 22px;
+  }
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-light);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 2560px) {
+  .mat-mdc-button {
+    font-size: 1rem !important;
+    padding: 0.75rem 1.5rem !important;
+  }
+
+  .mat-toolbar {
+    min-height: 80px !important;
+  }
+
+  .mat-mdc-list-item {
+    height: 60px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .mat-icon {
+    font-size: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+.text-small {
+  font-size: 0.875rem;
+}
+
+.text-base {
+  font-size: 1rem;
+}
+
+.text-large {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}

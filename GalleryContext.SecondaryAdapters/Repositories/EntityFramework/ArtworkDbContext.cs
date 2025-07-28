@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
+using GalleryContext.BusinessLogic.Models.Enums;
 
 namespace GalleryContext.SecondaryAdapters.Repositories.EntityFramework;
 
@@ -21,7 +22,7 @@ public class ArtworkDbContext(DbContextOptions<ArtworkDbContext> options) : DbCo
 
       b.Property(e => e.Id)
        .HasColumnName("id")
-       .ValueGeneratedOnAdd();
+       .ValueGeneratedNever();
 
       b.Property(e => e.Name)
        .HasColumnName("name")
@@ -35,6 +36,16 @@ public class ArtworkDbContext(DbContextOptions<ArtworkDbContext> options) : DbCo
       b.Property(e => e.ArtworkTypeId)
        .HasColumnName("artwork_type_id")
        .IsRequired();
+      
+      b.Property(e => e.ArtworkTypes)
+          .HasColumnName("artwork_types")
+          .HasColumnType("jsonb")
+          .HasConversion(
+              v => JsonSerializer.Serialize(v.Select(e => e.ToString()).ToList(), (JsonSerializerOptions?)null),
+              v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)!
+                  .Select(s => Enum.Parse<ArtworkType>(s)).ToList()
+          )
+          .Metadata.SetValueComparer(new ListValueComparer<ArtworkType>());
 
       b.Property(e => e.MaterialIds)
        .HasColumnName("material_ids")
@@ -43,10 +54,7 @@ public class ArtworkDbContext(DbContextOptions<ArtworkDbContext> options) : DbCo
            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
            v => JsonSerializer.Deserialize<List<int>>(v, (JsonSerializerOptions?)null) ?? new List<int>()
        )
-       .Metadata.SetValueComparer(new ValueComparer<List<int>>(
-           (c1, c2) => c1!.SequenceEqual(c2!),
-           c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-           c => c.ToList()));
+       .Metadata.SetValueComparer(new ListValueComparer<int>());
 
 
       b.Property(e => e.DimensionL).HasColumnName("dimension_l").HasColumnType("decimal(18, 2)");

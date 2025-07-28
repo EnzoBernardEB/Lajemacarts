@@ -18,7 +18,7 @@ public class Artwork
   public Guid Id { get; private set; }
   public ArtworkName Name { get; private set; }
   public ArtworkDescription Description { get; private set; }
-  public int ArtworkTypeId { get; private set; }
+  public List<ArtworkType> ArtworkTypes { get; private set; }
   public List<int> MaterialIds { get; private set; }
   public Dimensions Dimensions { get; private set; }
   public WeightCategory WeightCategory { get; private set; }
@@ -33,7 +33,7 @@ public class Artwork
   public static Result<Artwork> Create(
       ArtworkName name,
       ArtworkDescription description,
-      int artworkTypeId,
+      List<ArtworkType> artworkTypes,
       List<int> materialIds,
       Dimensions dimensions,
       WeightCategory weightCategory,
@@ -41,6 +41,10 @@ public class Artwork
       int creationYear,
       DateTime createdDate)
   {
+    if (artworkTypes == null || artworkTypes.Count == 0)
+    {
+      return Result<Artwork>.Failure(DomainErrors.Artwork.TypeRequired);
+    }
     var validationResult = Validate(materialIds);
     if (validationResult.IsFailure)
     {
@@ -52,7 +56,7 @@ public class Artwork
       Id = Guid.NewGuid(),
       Name = name,
       Description = description,
-      ArtworkTypeId = artworkTypeId,
+      ArtworkTypes = artworkTypes,
       MaterialIds = materialIds,
       Dimensions = dimensions,
       WeightCategory = weightCategory,
@@ -69,7 +73,7 @@ public class Artwork
   }
 
   public static Artwork Hydrate(
-      Guid id, string name, string description, int artworkTypeId, List<int> materialIds,
+      Guid id, string name, string description, List<ArtworkType> artworkTypes, List<int> materialIds,
       decimal dimensionL, decimal dimensionW, decimal dimensionH, DimensionUnit dimensionUnit,
       WeightCategory weightCategory, decimal price, int creationYear,
       ArtworkStatus status, bool isDeleted, DateTime createdAt, DateTime updatedAt, uint version)
@@ -79,7 +83,7 @@ public class Artwork
       Id = id,
       Name = ArtworkName.Hydrate(name),
       Description = ArtworkDescription.Hydrate(description),
-      ArtworkTypeId = artworkTypeId,
+      ArtworkTypes = artworkTypes,
       MaterialIds = materialIds,
       Dimensions = Dimensions.Hydrate(dimensionL, dimensionW, dimensionH, dimensionUnit),
       WeightCategory = weightCategory,

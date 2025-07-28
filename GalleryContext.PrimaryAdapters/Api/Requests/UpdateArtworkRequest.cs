@@ -5,7 +5,7 @@ namespace GalleryContext.PrimaryAdapters.Api.Requests;
 public record UpdateArtworkRequest(
     string Name,
     string Description,
-    int ArtworkTypeId,
+    List<ArtworkType> ArtworkTypes,
     List<int> MaterialIds,
     decimal DimensionL,
     decimal DimensionW,

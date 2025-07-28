@@ -6,7 +6,7 @@ public record ArtworkDto(
     Guid Id,
     string Name,
     string Description,
-    int ArtworkTypeId,
+    List<ArtworkType> ArtworkTypes,
     List<int> MaterialIds,
     decimal DimensionL,
     decimal DimensionW,

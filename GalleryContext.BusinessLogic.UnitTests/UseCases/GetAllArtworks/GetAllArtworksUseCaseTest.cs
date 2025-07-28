@@ -37,7 +37,7 @@ public class GetAllArtworksUseCaseTest
 
     var artwork1 = Artwork.Create(
         ArtworkName.Create("Test Artwork 1").Value,
-        ArtworkDescription.Create("Description 1").Value, 1, new List<int>
+        ArtworkDescription.Create("Description 1").Value,[ArtworkType.IncenseFountain], new List<int>
         {
           1,
         },

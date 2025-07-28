@@ -5,7 +5,7 @@ namespace GalleryContext.BusinessLogic.UseCases.AddArtwork;
 public record AddArtworkCommand(
     string Name,
     string Description,
-    int ArtworkTypeId,
+    List<ArtworkType> ArtworkTypes,
     List<int> MaterialIds,
     decimal DimensionL,
     decimal DimensionW,

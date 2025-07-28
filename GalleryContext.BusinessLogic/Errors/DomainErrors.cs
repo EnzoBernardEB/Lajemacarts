@@ -8,6 +8,7 @@ public static class DomainErrors
   {
     public static readonly Error PriceMustBePositive = new Error("Artwork.PriceMustBePositive", "Price must be positive.");
     public static readonly Error NameRequired = new Error("Artwork.Name.Required", "Valid name is required.");
+    public static readonly Error TypeRequired = new Error("Artwork.Type.Required", "At least one type is required.");
     public static readonly Error NameTooShort = new Error("Artwork.Name.TooShort", "Artwork name must be at least 3 characters long.");
     public static readonly Error NameTooLong = new Error("Artwork.Name.TooLong", "Artwork name cannot exceed 255 characters.");
     public static readonly Error MaterialRequired = new Error("Artwork.MaterialRequired", "Artwork must have at least one material.");

@@ -12,7 +12,7 @@ namespace GalleryContext.BusinessLogic.UnitTests.UseCases.AddArtwork;
 public class AddArtworkUseCaseTest
 {
 
-  private static readonly AddArtworkCommand ValidCommand = new AddArtworkCommand("Valid Test Name", "Valid description.", 1,
+  private static readonly AddArtworkCommand ValidCommand = new AddArtworkCommand("Valid Test Name", "Valid description.", [ArtworkType.Board,ArtworkType.Lamp],
       new List<int>
       {
         1,

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GalleryContext.SecondaryAdapters.Migrations
 {
     [DbContext(typeof(ArtworkDbContext))]
-    [Migration("20250701172610_InitialCreate")]
+    [Migration("20250711102340_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,16 +28,18 @@ namespace GalleryContext.SecondaryAdapters.Migrations
 
             modelBuilder.Entity("GalleryContext.SecondaryAdapters.Repositories.EntityFramework.Entities.ArtworkEntity", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ArtworkTypeId")
                         .HasColumnType("integer")
                         .HasColumnName("artwork_type_id");
+
+                    b.Property<string>("ArtworkTypes")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("artwork_types");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -100,6 +102,12 @@ namespace GalleryContext.SecondaryAdapters.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<string>("WeightCategory")
                         .IsRequired()

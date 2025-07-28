@@ -33,7 +33,7 @@ public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimePr
     var artworkResult = Artwork.Create(
         nameResult.Value,
         descriptionResult.Value,
-        command.ArtworkTypeId,
+        command.ArtworkTypes,
         command.MaterialIds,
         dimensionsResult.Value,
         command.WeightCategory,
@@ -53,7 +53,7 @@ public class AddArtworkUseCase(IArtworkRepository artworkRepository, IDateTimePr
         artworkResult.Value.Id,
         artworkResult.Value.Name.Value,
         artworkResult.Value.Description.Value,
-        artworkResult.Value.ArtworkTypeId,
+        artworkResult.Value.ArtworkTypes,
         new List<int>(artworkResult.Value.MaterialIds),
         artworkResult.Value.Dimensions.Length,
         artworkResult.Value.Dimensions.Width,

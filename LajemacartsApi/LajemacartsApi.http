@@ -6,7 +6,7 @@ GET {{baseUrl}}/api/v1/artworks
 ### Créer une nouvelle oeuvre
 @name = Coucher de Soleil sur La Jarrie
 @description = Une peinture à l'huile représentant le soleil couchant sur les marais près de La Jarrie. Couleurs chaudes et texture prononcée.
-@artworkTypeId = 1
+@artworkTypes = 3
 @materialIds = 1
 @dimensionL = 70.0
 @dimensionW = 50.0
@@ -22,7 +22,7 @@ Content-Type: application/json
 {
   "name": "{{name}}",
   "description": "{{description}}",
-  "artworkTypeId": {{artworkTypeId}},
+  "artworkTypes": [{{artworkTypes}}],
   "materialIds": [{{materialIds}}],
   "dimensionL": {{dimensionL}},
   "dimensionW": {{dimensionW}},

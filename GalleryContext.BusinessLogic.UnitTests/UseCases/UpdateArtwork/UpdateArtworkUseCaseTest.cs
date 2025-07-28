@@ -28,8 +28,7 @@ public class UpdateArtworkUseCaseTest
   {
     var artworkResult = Artwork.Create(
         ArtworkName.Create(name).Value,
-        ArtworkDescription.Create("Initial Description.").Value,
-        1,
+        ArtworkDescription.Create("Initial Description.").Value,[ArtworkType.Board],
         new List<int>
         {
           1,
@@ -48,7 +47,7 @@ public class UpdateArtworkUseCaseTest
   public async Task ExecuteAsync_ShouldReturnNotFound_WhenArtworkDoesNotExist()
   {
     var command = new UpdateArtworkCommand(
-        Guid.NewGuid(), "New Name", "New Desc", 1, new List<int>
+        Guid.NewGuid(), "New Name", "New Desc", [ArtworkType.Board], new List<int>
         {
           1,
         },
@@ -71,7 +70,7 @@ public class UpdateArtworkUseCaseTest
         initialArtwork.Id,
         "Updated Name",
         "Updated Description",
-        initialArtwork.ArtworkTypeId,
+        initialArtwork.ArtworkTypes,
         new List<int>
         {
           1,
@@ -109,7 +108,7 @@ public class UpdateArtworkUseCaseTest
         initialArtwork.Id,
         "Updated Name",
         "Updated Description",
-        initialArtwork.ArtworkTypeId, initialArtwork.MaterialIds,
+        initialArtwork.ArtworkTypes, initialArtwork.MaterialIds,
         initialArtwork.Dimensions.Length, initialArtwork.Dimensions.Width, initialArtwork.Dimensions.Height,
         initialArtwork.Dimensions.Unit, initialArtwork.WeightCategory,
         -50m,

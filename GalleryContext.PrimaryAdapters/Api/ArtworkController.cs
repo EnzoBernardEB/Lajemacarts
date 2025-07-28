@@ -1,4 +1,5 @@
 ﻿using GalleryContext.BusinessLogic.Gateways.Dtos;
+using GalleryContext.BusinessLogic.Models.Enums;
 using GalleryContext.BusinessLogic.UseCases.AddArtwork;
 using GalleryContext.BusinessLogic.UseCases.DeleteArtwork;
 using GalleryContext.BusinessLogic.UseCases.GetAllArtworks;
@@ -7,11 +8,11 @@ using GalleryContext.PrimaryAdapters.Api.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Core.Primitives;
-
+using SharedKernel.Core.Extensions;
 namespace GalleryContext.PrimaryAdapters.Api;
 
 [ApiController]
-[Route("api/v1/Artworks")]
+[Route("api/v1/artworks")]
 public class ArtworkController(
     AddArtworkUseCase addArtworkUsecase,
     GetAllArtworksUseCase getAllArtworksUseCase,
@@ -72,7 +73,7 @@ public class ArtworkController(
         id,
         request.Name,
         request.Description,
-        request.ArtworkTypeId,
+        request.ArtworkTypes,
         request.MaterialIds,
         request.DimensionL,
         request.DimensionW,
@@ -96,5 +97,20 @@ public class ArtworkController(
       { Code: "Artwork.Concurrency" } => Conflict(result.Error),
       _ => BadRequest(result.Error),
     };
+  }
+  
+  [HttpGet("types", Name = "GetArtworkTypes")]
+  [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+  public IActionResult GetArtworkTypes()
+  {
+    var artworkTypes = Enum.GetValues<ArtworkType>()
+      .Select(t => new 
+      {
+        key = t.ToString(),
+        value = t.GetDisplayName()
+      })
+      .ToList();
+
+    return Ok(artworkTypes);
   }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -20,11 +19,11 @@ namespace GalleryContext.SecondaryAdapters.Migrations
                 schema: "artwork_context",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     description = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     artwork_type_id = table.Column<int>(type: "integer", nullable: false),
+                    artwork_types = table.Column<string>(type: "jsonb", nullable: false),
                     material_ids = table.Column<string>(type: "jsonb", nullable: false),
                     dimension_l = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     dimension_w = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
@@ -36,7 +35,8 @@ namespace GalleryContext.SecondaryAdapters.Migrations
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     is_deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
