@@ -95,7 +95,7 @@ export class ArtworkMapper {
         large: this.getImageUrl(enriched.artwork.id, 'large'),
         fullsize: this.getImageUrl(enriched.artwork.id, 'fullsize')
       },
-      
+
       originalData: enriched
     };
   }
@@ -215,7 +215,7 @@ export class ArtworkMapper {
       fullsize: 'original'
     };
 
-    return `https://images.example.com/artworks/${artworkId}/${sizeMap[size]}.jpg`;
+    return `https://picsum.photos/${sizeMap[size]}`;
   }
 
   private static generateSeoDescription(enriched: EnrichedArtwork): string {
