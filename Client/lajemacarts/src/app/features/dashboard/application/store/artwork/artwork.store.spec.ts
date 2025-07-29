@@ -1,13 +1,13 @@
 import {fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {of, throwError} from 'rxjs'
+import {of, throwError} from 'rxjs';
 import {Artwork} from '../../../domain/models/artwork';
 import {ArtworkType} from '../../../domain/models/artwork-type';
 import {Material} from '../../../domain/models/material';
 import {DimensionUnit, WeightCategory} from '../../../domain/models/enums/enums';
 import {ArtworkStore} from './artwork.store';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
-import {MaterialGateway} from '../../../domain/ ports/material.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
+import {MaterialGateway} from '../../../domain/ ports/material.gateway';
 
 describe('ArtworkStore', () => {
   let store: InstanceType<typeof ArtworkStore>;
@@ -28,19 +28,7 @@ describe('ArtworkStore', () => {
     hoursSpent: number;
     creationYear: number;
   }> = {}): Artwork => {
-    const defaults: {
-      name: string;
-      description: string;
-      artworkTypeId: string;
-      materials: { materialId: string; quantity: number }[];
-      dimL: number;
-      dimW: number;
-      dimH: number;
-      dimUnit: DimensionUnit;
-      weightCategory: WeightCategory;
-      hoursSpent: number;
-      creationYear: number;
-    } = {
+    const defaults = {
       name: 'Test Artwork',
       description: 'Test Description',
       artworkTypeId: 'type-1',
@@ -48,8 +36,8 @@ describe('ArtworkStore', () => {
       dimL: 50,
       dimW: 70,
       dimH: 2,
-      dimUnit: 'cm',
-      weightCategory: 'LessThan1kg',
+      dimUnit: 'cm' as DimensionUnit,
+      weightCategory: 'LessThan1kg' as WeightCategory,
       hoursSpent: 10,
       creationYear: 2024,
     };
@@ -67,10 +55,14 @@ describe('ArtworkStore', () => {
   const createMockArtworkType = (overrides: Partial<{
     id: string;
     name: string;
+    basePrice: number;
+    profitMultiplier: number;
   }> = {}): ArtworkType => {
     const defaults = {
       id: 'type-1',
       name: 'Painting',
+      basePrice: 100,
+      profitMultiplier: 1.5,
     };
 
     const data = {...defaults, ...overrides};
@@ -78,16 +70,22 @@ describe('ArtworkStore', () => {
     return {
       id: data.id,
       name: {value: data.name},
+      basePrice: {amount: data.basePrice},
+      profitMultiplier: data.profitMultiplier,
     } as ArtworkType;
   };
 
   const createMockMaterial = (overrides: Partial<{
     id: string;
     name: string;
+    pricePerUnit: number;
+    unit: string;
   }> = {}): Material => {
     const defaults = {
       id: 'material-1',
       name: 'Oil Paint',
+      pricePerUnit: 10,
+      unit: 'tube',
     };
 
     const data = {...defaults, ...overrides};
@@ -95,8 +93,11 @@ describe('ArtworkStore', () => {
     return {
       id: data.id,
       name: {value: data.name},
+      pricePerUnit: {amount: data.pricePerUnit},
+      unit: data.unit,
     } as Material;
   };
+
 
   beforeEach(() => {
     mockArtworkGateway = {
@@ -283,23 +284,48 @@ describe('ArtworkStore', () => {
     }));
 
     it('should update artwork successfully', fakeAsync(() => {
+      // 1. Create the initial artwork instance
       const existingArtwork = createMockArtwork();
-      const updatedArtwork = createMockArtwork({name: 'Updated Name'});
 
-      // Setup initial state
+      // 2. Define the properties for the update
+      const updateProps = {
+        name: 'Updated Name',
+        description: existingArtwork.description.value,
+        artworkTypeId: existingArtwork.artworkTypeId,
+        materials: existingArtwork.materials.map(m => ({materialId: m.materialId, quantity: m.quantity})),
+        dimL: existingArtwork.dimensions.length,
+        dimW: existingArtwork.dimensions.width,
+        dimH: existingArtwork.dimensions.height,
+        dimUnit: existingArtwork.dimensions.unit,
+        weightCategory: existingArtwork.weightCategory,
+        hoursSpent: existingArtwork.hoursSpent,
+        creationYear: existingArtwork.creationYear,
+      };
+
+      // 3. Create the updated artwork instance by calling the domain method
+      const updateResult = existingArtwork.update(updateProps);
+      if (updateResult.isFailure) {
+        throw new Error('Test setup failed: could not update artwork');
+      }
+      const updatedArtwork = updateResult.getValue();
+
+      // 4. Setup initial state in the store
       mockArtworkGateway.getAll.mockReturnValue(of([existingArtwork]));
       mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
       mockMaterialGateway.getAll.mockReturnValue(of([]));
       store.loadAllData();
       tick();
 
+      // 5. Mock the gateway update call and execute the store method
       mockArtworkGateway.update.mockReturnValue(of(updatedArtwork));
       store.updateArtwork(updatedArtwork);
       tick();
 
+      // 6. Assert the state was updated correctly
       const artworks = store.artworks();
       expect(artworks).toHaveLength(1);
       expect(artworks[0].name.value).toBe('Updated Name');
+      expect(artworks[0].id).toBe(existingArtwork.id); // Verify ID is preserved
     }));
 
     it('should delete artwork successfully', fakeAsync(() => {
@@ -311,7 +337,7 @@ describe('ArtworkStore', () => {
       store.loadAllData();
       tick();
 
-      mockArtworkGateway.delete.mockReturnValue(of(void 0));
+      mockArtworkGateway.delete.mockReturnValue(of(undefined));
       store.deleteArtwork(artworkToDelete.id);
       tick();
 
