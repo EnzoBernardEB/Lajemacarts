@@ -51,9 +51,7 @@ export const ArtworkStore = signalStore(
   withState<ArtworkState>(() => inject(initialArtworkState)),
   withRequestStatus(),
 
-  // ✅ COMPUTED BASIQUES - Utilitaires pour l'accès aux données
   withComputed((store) => ({
-    // Maps pour un accès efficace (optimisation technique)
     artworkTypeMap: computed(() =>
       new Map(store.artworkTypes().map(type => [type.id, type]))
     ),
@@ -62,11 +60,9 @@ export const ArtworkStore = signalStore(
       new Map(store.materials().map(material => [material.id, material]))
     ),
 
-    // État de base
     isEmpty: computed(() => store.artworks().length === 0),
     totalArtworks: computed(() => store.artworks().length),
 
-    // État des filtres
     hasActiveFilters: computed(() => {
       return store.searchTerm().length > 0 ||
         store.statusFilter() !== null ||
