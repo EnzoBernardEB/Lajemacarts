@@ -1,9 +1,10 @@
-import {TestBed} from '@angular/core/testing';
+import {fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {of, throwError} from 'rxjs';
-import {ArtworkStore} from './artwork.store'
 import {Artwork} from '../../../domain/models/artwork';
 import {ArtworkType} from '../../../domain/models/artwork-type';
 import {Material} from '../../../domain/models/material';
+import {DimensionUnit, WeightCategory} from '../../../domain/models/enums/enums';
+import {ArtworkStore} from './artwork.store';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
@@ -14,27 +15,89 @@ describe('ArtworkStore', () => {
   let mockArtworkTypeGateway: jest.Mocked<ArtworkTypeGateway>;
   let mockMaterialGateway: jest.Mocked<MaterialGateway>;
 
-  const createMockArtwork = (overrides: Partial<Artwork> = {}): Artwork => ({
-    id: 'artwork-1',
-    name: {value: 'Test Artwork'},
-    description: {value: 'Test Description'},
-    status: 'InStock',
-    artworkTypeId: 'type-1',
-    materials: [{materialId: 'material-1', quantity: 1}],
-    ...overrides
-  } as Artwork);
+  const createMockArtwork = (overrides: Partial<{
+    name: string;
+    description: string;
+    artworkTypeId: string;
+    materials: { materialId: string; quantity: number }[];
+    dimL: number;
+    dimW: number;
+    dimH: number;
+    dimUnit: DimensionUnit;
+    weightCategory: WeightCategory;
+    hoursSpent: number;
+    creationYear: number;
+  }> = {}): Artwork => {
+    const defaults = {
+      name: 'Test Artwork',
+      description: 'Test Description',
+      artworkTypeId: 'type-1',
+      materials: [{materialId: 'material-1', quantity: 1}],
+      dimL: 50,
+      dimW: 70,
+      dimH: 2,
+      dimUnit: 'cm' as DimensionUnit,
+      weightCategory: 'LessThan1kg' as WeightCategory,
+      hoursSpent: 10,
+      creationYear: 2024,
+    };
 
-  const createMockArtworkType = (overrides: Partial<ArtworkType> = {}): ArtworkType => ({
-    id: 'type-1',
-    name: {value: 'Painting'},
-    ...overrides
-  } as ArtworkType);
+    const data = {...defaults, ...overrides};
 
-  const createMockMaterial = (overrides: Partial<Material> = {}): Material => ({
-    id: 'material-1',
-    name: {value: 'Oil Paint'},
-    ...overrides
-  } as Material);
+    const result = Artwork.create(data);
+    if (result.isFailure) {
+      throw new Error(`Failed to create mock artwork: ${result.error}`);
+    }
+
+    return result.getValue();
+  };
+
+  const createMockArtworkType = (overrides: Partial<{
+    id: string;
+    name: string;
+    basePrice: number;
+    profitMultiplier: number;
+  }> = {}): ArtworkType => {
+    const defaults = {
+      id: 'type-1',
+      name: 'Painting',
+      basePrice: 100,
+      profitMultiplier: 1.5,
+    };
+
+    const data = {...defaults, ...overrides};
+
+    return {
+      id: data.id,
+      name: {value: data.name},
+      basePrice: {amount: data.basePrice},
+      profitMultiplier: data.profitMultiplier,
+    } as ArtworkType;
+  };
+
+  const createMockMaterial = (overrides: Partial<{
+    id: string;
+    name: string;
+    pricePerUnit: number;
+    unit: string;
+  }> = {}): Material => {
+    const defaults = {
+      id: 'material-1',
+      name: 'Oil Paint',
+      pricePerUnit: 10,
+      unit: 'tube',
+    };
+
+    const data = {...defaults, ...overrides};
+
+    return {
+      id: data.id,
+      name: {value: data.name},
+      pricePerUnit: {amount: data.pricePerUnit},
+      unit: data.unit,
+    } as Material;
+  };
+
 
   beforeEach(() => {
     mockArtworkGateway = {
@@ -71,7 +134,7 @@ describe('ArtworkStore', () => {
   });
 
   describe('Data loading', () => {
-    it('should load all data successfully and enrich artworks', (done) => {
+    it('should load all data successfully and enrich artworks', fakeAsync(() => {
       const mockArtwork = createMockArtwork();
       const mockType = createMockArtworkType();
       const mockMaterial = createMockMaterial();
@@ -81,56 +144,47 @@ describe('ArtworkStore', () => {
       mockMaterialGateway.getAll.mockReturnValue(of([mockMaterial]));
 
       store.loadAllData();
+      tick();
 
-      setTimeout(() => {
-        expect(store.artworks()).toEqual([mockArtwork]);
-        expect(store.artworkTypes()).toEqual([mockType]);
-        expect(store.materials()).toEqual([mockMaterial]);
+      expect(store.artworks()).toEqual([mockArtwork]);
+      expect(store.artworkTypes()).toEqual([mockType]);
+      expect(store.materials()).toEqual([mockMaterial]);
 
-        const enriched = store.enrichedArtworks();
-        expect(enriched).toHaveLength(1);
-        expect(enriched[0].artwork).toEqual(mockArtwork);
-        expect(enriched[0].artworkType).toEqual(mockType);
-        expect(enriched[0].artworkMaterials).toEqual([mockMaterial]);
+      const enriched = store.enrichedArtworks();
+      expect(enriched).toHaveLength(1);
+      expect(enriched[0].artwork).toEqual(mockArtwork);
+      expect(enriched[0].artworkType).toEqual(mockType);
+      expect(enriched[0].artworkMaterials).toEqual([mockMaterial]);
+    }));
 
-        done();
-      }, 0);
-    });
-
-    it('should handle data loading errors gracefully', (done) => {
+    it('should handle data loading errors gracefully', fakeAsync(() => {
       mockArtworkGateway.getAll.mockReturnValue(throwError(() => new Error('Network error')));
       mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
       mockMaterialGateway.getAll.mockReturnValue(of([]));
 
       store.loadAllData();
+      tick();
 
-      setTimeout(() => {
-        expect(store.error()).toBe('Échec du chargement des données');
-        expect(store.artworks()).toEqual([]);
-        done();
-      }, 0);
-    });
+      expect(store.error()).toBe('Échec du chargement des données');
+      expect(store.artworks()).toEqual([]);
+    }));
   });
 
   describe('Filtering behavior', () => {
-    beforeEach((done) => {
+    beforeEach(fakeAsync(() => {
       const artworks = [
         createMockArtwork({
-          id: 'art-1',
-          name: {value: 'Modern Painting'},
-          status: 'Draft',
+          name: 'Modern Painting',
           artworkTypeId: 'type-1'
         }),
         createMockArtwork({
-          id: 'art-2',
-          name: {value: 'Classical Sculpture'},
-          status: 'InStock',
+          name: 'Classical Sculpture',
           artworkTypeId: 'type-2'
         }),
       ];
       const types = [
-        createMockArtworkType({id: 'type-1', name: {value: 'Painting'}}),
-        createMockArtworkType({id: 'type-2', name: {value: 'Sculpture'}}),
+        createMockArtworkType({id: 'type-1', name: 'Painting'}),
+        createMockArtworkType({id: 'type-2', name: 'Sculpture'}),
       ];
 
       mockArtworkGateway.getAll.mockReturnValue(of(artworks));
@@ -138,8 +192,8 @@ describe('ArtworkStore', () => {
       mockMaterialGateway.getAll.mockReturnValue(of([]));
 
       store.loadAllData();
-      setTimeout(done, 0);
-    });
+      tick();
+    }));
 
     it('should filter artworks by search term', () => {
       store.updateSearchTerm('Modern');
@@ -150,11 +204,17 @@ describe('ArtworkStore', () => {
     });
 
     it('should filter artworks by status', () => {
-      store.updateStatusFilter('InStock');
+      store.updateStatusFilter('Draft');
 
       const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(1);
-      expect(filtered[0].artwork.status).toBe('InStock');
+      expect(filtered).toHaveLength(2);
+    });
+
+    it('should filter artworks by status - no matches', () => {
+      store.updateStatusFilter('Sold');
+
+      const filtered = store.filteredArtworks();
+      expect(filtered).toHaveLength(0);
     });
 
     it('should filter artworks by type', () => {
@@ -167,7 +227,7 @@ describe('ArtworkStore', () => {
 
     it('should combine multiple filters correctly', () => {
       store.updateSearchTerm('Classical');
-      store.updateStatusFilter('InStock');
+      store.updateStatusFilter('Draft');
       store.updateTypeFilter('type-2');
 
       const filtered = store.filteredArtworks();
@@ -177,7 +237,7 @@ describe('ArtworkStore', () => {
 
     it('should clear all filters', () => {
       store.updateSearchTerm('test');
-      store.updateStatusFilter('InStock');
+      store.updateStatusFilter('Draft');
       store.updateTypeFilter('type-1');
 
       store.clearFilters();
@@ -197,7 +257,7 @@ describe('ArtworkStore', () => {
       expect(store.hasActiveFilters()).toBe(true);
 
       store.updateSearchTerm('');
-      store.updateStatusFilter('InStock');
+      store.updateStatusFilter('Draft');
       expect(store.hasActiveFilters()).toBe(true);
 
       store.updateStatusFilter(null);
@@ -212,72 +272,88 @@ describe('ArtworkStore', () => {
   });
 
   describe('CRUD operations', () => {
-    it('should add artwork successfully', (done) => {
-      const newArtwork = createMockArtwork({id: 'new-artwork'});
+    it('should add artwork successfully', fakeAsync(() => {
+      const newArtwork = createMockArtwork({name: 'New Artwork'});
       mockArtworkGateway.add.mockReturnValue(of(newArtwork));
 
       store.addArtwork(newArtwork);
+      tick();
 
-      setTimeout(() => {
-        expect(store.artworks()).toContain(newArtwork);
-        expect(mockArtworkGateway.add).toHaveBeenCalledWith(newArtwork);
-        done();
-      }, 0);
-    });
+      expect(store.artworks()).toContain(newArtwork);
+      expect(mockArtworkGateway.add).toHaveBeenCalledWith(newArtwork);
+    }));
 
-    it('should update artwork successfully', (done) => {
+    it('should update artwork successfully', fakeAsync(() => {
+      // 1. Create the initial artwork instance
       const existingArtwork = createMockArtwork();
-      const updatedArtwork = createMockArtwork({name: {value: 'Updated Name'}});
 
+      // 2. Define the properties for the update
+      const updateProps = {
+        name: 'Updated Name',
+        description: existingArtwork.description.value,
+        artworkTypeId: existingArtwork.artworkTypeId,
+        materials: existingArtwork.materials.map(m => ({materialId: m.materialId, quantity: m.quantity})),
+        dimL: existingArtwork.dimensions.length,
+        dimW: existingArtwork.dimensions.width,
+        dimH: existingArtwork.dimensions.height,
+        dimUnit: existingArtwork.dimensions.unit,
+        weightCategory: existingArtwork.weightCategory,
+        hoursSpent: existingArtwork.hoursSpent,
+        creationYear: existingArtwork.creationYear,
+      };
+
+      // 3. Create the updated artwork instance by calling the domain method
+      const updateResult = existingArtwork.update(updateProps);
+      if (updateResult.isFailure) {
+        throw new Error('Test setup failed: could not update artwork');
+      }
+      const updatedArtwork = updateResult.getValue();
+
+      // 4. Setup initial state in the store
       mockArtworkGateway.getAll.mockReturnValue(of([existingArtwork]));
       mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
       mockMaterialGateway.getAll.mockReturnValue(of([]));
       store.loadAllData();
+      tick();
 
-      setTimeout(() => {
-        mockArtworkGateway.update.mockReturnValue(of(updatedArtwork));
-        store.updateArtwork(updatedArtwork);
+      // 5. Mock the gateway update call and execute the store method
+      mockArtworkGateway.update.mockReturnValue(of(updatedArtwork));
+      store.updateArtwork(updatedArtwork);
+      tick();
 
-        setTimeout(() => {
-          const artworks = store.artworks();
-          expect(artworks).toHaveLength(1);
-          expect(artworks[0].name.value).toBe('Updated Name');
-          done();
-        }, 0);
-      }, 0);
-    });
+      // 6. Assert the state was updated correctly
+      const artworks = store.artworks();
+      expect(artworks).toHaveLength(1);
+      expect(artworks[0].name.value).toBe('Updated Name');
+      expect(artworks[0].id).toBe(existingArtwork.id); // Verify ID is preserved
+    }));
 
-    it('should delete artwork successfully', (done) => {
+    it('should delete artwork successfully', fakeAsync(() => {
       const artworkToDelete = createMockArtwork();
 
       mockArtworkGateway.getAll.mockReturnValue(of([artworkToDelete]));
       mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
       mockMaterialGateway.getAll.mockReturnValue(of([]));
       store.loadAllData();
+      tick();
 
-      setTimeout(() => {
-        mockArtworkGateway.delete.mockReturnValue(of(void 0));
-        store.deleteArtwork(artworkToDelete.id);
+      mockArtworkGateway.delete.mockReturnValue(of(undefined));
+      store.deleteArtwork(artworkToDelete.id);
+      tick();
 
-        setTimeout(() => {
-          expect(store.artworks()).toHaveLength(0);
-          expect(mockArtworkGateway.delete).toHaveBeenCalledWith(artworkToDelete.id);
-          done();
-        }, 0);
-      }, 0);
-    });
+      expect(store.artworks()).toHaveLength(0);
+      expect(mockArtworkGateway.delete).toHaveBeenCalledWith(artworkToDelete.id);
+    }));
 
-    it('should handle CRUD operation errors', (done) => {
+    it('should handle CRUD operation errors', fakeAsync(() => {
       const artwork = createMockArtwork();
       mockArtworkGateway.add.mockReturnValue(throwError(() => new Error('Server error')));
 
       store.addArtwork(artwork);
+      tick();
 
-      setTimeout(() => {
-        expect(store.error()).toBe('Échec de l\'ajout de l\'œuvre');
-        done();
-      }, 0);
-    });
+      expect(store.error()).toBe('Échec de l\'ajout de l\'œuvre');
+    }));
   });
 
   describe('Computed state logic', () => {
@@ -286,23 +362,20 @@ describe('ArtworkStore', () => {
       expect(store.totalArtworks()).toBe(0);
     });
 
-    it('should detect no results state correctly', (done) => {
-      const artwork = createMockArtwork({name: {value: 'Test Artwork'}});
+    it('should detect no results state correctly', fakeAsync(() => {
+      const artwork = createMockArtwork({name: 'Test Artwork'});
       mockArtworkGateway.getAll.mockReturnValue(of([artwork]));
       mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
       mockMaterialGateway.getAll.mockReturnValue(of([]));
 
       store.loadAllData();
+      tick();
 
-      setTimeout(() => {
-        expect(store.hasNoResults()).toBe(false);
+      expect(store.hasNoResults()).toBe(false);
 
-        store.updateSearchTerm('nonexistent');
-        expect(store.hasNoResults()).toBe(true);
-        expect(store.filteredCount()).toBe(0);
-
-        done();
-      }, 0);
-    });
+      store.updateSearchTerm('nonexistent');
+      expect(store.hasNoResults()).toBe(true);
+      expect(store.filteredCount()).toBe(0);
+    }));
   });
 });
