@@ -91,7 +91,6 @@ describe('ArtworkStore', () => {
     tick(500);
 
     expect(store.isPending()).toBe(false);
-    expect(store.isPending()).toBe(false);
     expect(store.isFulfilled()).toBe(false);
     expect(store.error()).toBe('Échec du chargement des données');
     expect(store.artworks()).toEqual([]);
