@@ -1,381 +1,362 @@
-import {fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {of, throwError} from 'rxjs';
-import {Artwork} from '../../../domain/models/artwork';
-import {ArtworkType} from '../../../domain/models/artwork-type';
-import {Material} from '../../../domain/models/material';
-import {DimensionUnit, WeightCategory} from '../../../domain/models/enums/enums';
 import {ArtworkStore} from './artwork.store';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
+import {ArtworkInMemoryGateway} from '../../../infrastructure/gateway/artwork-in-memory.gateway';
+import {ArtworkTypeInMemoryGateway} from '../../../infrastructure/gateway/artwork-type-in-memory.gateway';
+import {MaterialInMemoryGateway} from '../../../infrastructure/gateway/material-in-memory.gateway';
+import {fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {patchState, StateSignals} from '@ngrx/signals';
+import {unprotected} from '@ngrx/signals/testing';
+import {mockArtworks, mockArtworkTypes, mockMaterials} from './artwork.store.data';
+import {of, throwError} from 'rxjs';
+import {Artwork} from '../../../domain/models/artwork';
+
+function initStore(partial?: StateSignals<typeof ArtworkStore>) {
+  const store = TestBed.inject(ArtworkStore);
+  patchState(unprotected(store), partial ?? {});
+  return store
+}
 
 describe('ArtworkStore', () => {
-  let store: InstanceType<typeof ArtworkStore>;
-  let mockArtworkGateway: jest.Mocked<ArtworkGateway>;
-  let mockArtworkTypeGateway: jest.Mocked<ArtworkTypeGateway>;
-  let mockMaterialGateway: jest.Mocked<MaterialGateway>;
-
-  const createMockArtwork = (overrides: Partial<{
-    name: string;
-    description: string;
-    artworkTypeId: string;
-    materials: { materialId: string; quantity: number }[];
-    dimL: number;
-    dimW: number;
-    dimH: number;
-    dimUnit: DimensionUnit;
-    weightCategory: WeightCategory;
-    hoursSpent: number;
-    creationYear: number;
-  }> = {}): Artwork => {
-    const defaults = {
-      name: 'Test Artwork',
-      description: 'Test Description',
-      artworkTypeId: 'type-1',
-      materials: [{materialId: 'material-1', quantity: 1}],
-      dimL: 50,
-      dimW: 70,
-      dimH: 2,
-      dimUnit: 'cm' as DimensionUnit,
-      weightCategory: 'LessThan1kg' as WeightCategory,
-      hoursSpent: 10,
-      creationYear: 2024,
-    };
-
-    const data = {...defaults, ...overrides};
-
-    const result = Artwork.create(data);
-    if (result.isFailure) {
-      throw new Error(`Failed to create mock artwork: ${result.error}`);
-    }
-
-    return result.getValue();
-  };
-
-  const createMockArtworkType = (overrides: Partial<{
-    id: string;
-    name: string;
-    basePrice: number;
-    profitMultiplier: number;
-  }> = {}): ArtworkType => {
-    const defaults = {
-      id: 'type-1',
-      name: 'Painting',
-      basePrice: 100,
-      profitMultiplier: 1.5,
-    };
-
-    const data = {...defaults, ...overrides};
-
-    return {
-      id: data.id,
-      name: {value: data.name},
-      basePrice: {amount: data.basePrice},
-      profitMultiplier: data.profitMultiplier,
-    } as ArtworkType;
-  };
-
-  const createMockMaterial = (overrides: Partial<{
-    id: string;
-    name: string;
-    pricePerUnit: number;
-    unit: string;
-  }> = {}): Material => {
-    const defaults = {
-      id: 'material-1',
-      name: 'Oil Paint',
-      pricePerUnit: 10,
-      unit: 'tube',
-    };
-
-    const data = {...defaults, ...overrides};
-
-    return {
-      id: data.id,
-      name: {value: data.name},
-      pricePerUnit: {amount: data.pricePerUnit},
-      unit: data.unit,
-    } as Material;
-  };
-
+  let artworkGateway: ArtworkInMemoryGateway;
+  let artworkTypeGateway: ArtworkTypeInMemoryGateway;
+  let materialGateway: MaterialInMemoryGateway;
 
   beforeEach(() => {
-    mockArtworkGateway = {
-      getAll: jest.fn(),
-      add: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as jest.Mocked<ArtworkGateway>;
-
-    mockArtworkTypeGateway = {
-      getAll: jest.fn(),
-      add: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as jest.Mocked<ArtworkTypeGateway>;
-
-    mockMaterialGateway = {
-      getAll: jest.fn(),
-      add: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as jest.Mocked<MaterialGateway>;
-
+    artworkGateway = new ArtworkInMemoryGateway()
+    artworkTypeGateway = new ArtworkTypeInMemoryGateway()
+    materialGateway = new MaterialInMemoryGateway()
     TestBed.configureTestingModule({
       providers: [
         ArtworkStore,
-        {provide: ArtworkGateway, useValue: mockArtworkGateway},
-        {provide: ArtworkTypeGateway, useValue: mockArtworkTypeGateway},
-        {provide: MaterialGateway, useValue: mockMaterialGateway},
-      ],
+        {provide: ArtworkGateway, useValue: artworkGateway},
+        {provide: ArtworkTypeGateway, useValue: artworkTypeGateway},
+        {provide: MaterialGateway, useValue: materialGateway},
+      ]
     });
+  })
 
-    store = TestBed.inject(ArtworkStore);
+  it('should_initialize_withDefaultEmptyState', () => {
+    const store = initStore();
+
+    expect(store.artworks()).toEqual([]);
+    expect(store.artworkTypes()).toEqual([]);
+    expect(store.materials()).toEqual([]);
+    expect(store.searchTerm()).toEqual('');
+    expect(store.statusFilter()).toEqual(null);
+    expect(store.typeFilter()).toEqual(null);
   });
 
-  describe('Data loading', () => {
-    it('should load all data successfully and enrich artworks', fakeAsync(() => {
-      const mockArtwork = createMockArtwork();
-      const mockType = createMockArtworkType();
-      const mockMaterial = createMockMaterial();
+  it('should_reflectArtworksPresence_in_isEmptySignal', () => {
+    const store = initStore()
+    expect(store.isEmpty()).toBe(true);
+    patchState(unprotected(store), {artworks: mockArtworks})
+    expect(store.isEmpty()).toBe(false);
+  })
 
-      mockArtworkGateway.getAll.mockReturnValue(of([mockArtwork]));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of([mockType]));
-      mockMaterialGateway.getAll.mockReturnValue(of([mockMaterial]));
+  it('should_countAllArtworks_when_noFilterIsActive', () => {
+    const store = initStore({artworks: mockArtworks})
+    expect(store.filteredCount()).toBe(3);
+  })
 
-      store.loadAllData();
-      tick();
+  it('should_updateStateAndSetFulfilled_when_dataLoadSucceeds', fakeAsync(() => {
+    const store = initStore()
+    artworkGateway.feedWith(mockArtworks);
+    materialGateway.feedWith(mockMaterials);
+    artworkTypeGateway.feedWith(mockArtworkTypes);
 
-      expect(store.artworks()).toEqual([mockArtwork]);
-      expect(store.artworkTypes()).toEqual([mockType]);
-      expect(store.materials()).toEqual([mockMaterial]);
+    expect(store.artworks()).toEqual([]);
 
-      const enriched = store.enrichedArtworks();
-      expect(enriched).toHaveLength(1);
-      expect(enriched[0].artwork).toEqual(mockArtwork);
-      expect(enriched[0].artworkType).toEqual(mockType);
-      expect(enriched[0].artworkMaterials).toEqual([mockMaterial]);
-    }));
+    store.loadAllData();
 
-    it('should handle data loading errors gracefully', fakeAsync(() => {
-      mockArtworkGateway.getAll.mockReturnValue(throwError(() => new Error('Network error')));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
-      mockMaterialGateway.getAll.mockReturnValue(of([]));
+    expect(store.isPending()).toBe(true);
 
-      store.loadAllData();
-      tick();
+    tick(500);
 
-      expect(store.error()).toBe('Échec du chargement des données');
-      expect(store.artworks()).toEqual([]);
-    }));
-  });
+    expect(store.isPending()).toBe(false);
+    expect(store.isFulfilled()).toBe(true);
+    expect(store.artworks()).toEqual(mockArtworks);
+  }))
 
-  describe('Filtering behavior', () => {
-    beforeEach(fakeAsync(() => {
-      const artworks = [
-        createMockArtwork({
-          name: 'Modern Painting',
-          artworkTypeId: 'type-1'
-        }),
-        createMockArtwork({
-          name: 'Classical Sculpture',
-          artworkTypeId: 'type-2'
-        }),
-      ];
-      const types = [
-        createMockArtworkType({id: 'type-1', name: 'Painting'}),
-        createMockArtworkType({id: 'type-2', name: 'Sculpture'}),
-      ];
+  it('should_setErrorStateAndKeepData_when_dataLoadFails', fakeAsync(() => {
+    const store = initStore()
+    artworkGateway.feedWith(mockArtworks);
+    materialGateway.feedWith(mockMaterials);
+    artworkTypeGateway.feedWith(mockArtworkTypes);
+    jest.spyOn(artworkGateway, 'getAll').mockReturnValue(throwError(() => new Error('Network Error')));
 
-      mockArtworkGateway.getAll.mockReturnValue(of(artworks));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of(types));
-      mockMaterialGateway.getAll.mockReturnValue(of([]));
+    store.loadAllData();
 
-      store.loadAllData();
-      tick();
-    }));
+    tick(500);
 
-    it('should filter artworks by search term', () => {
-      store.updateSearchTerm('Modern');
+    expect(store.isPending()).toBe(false);
+    expect(store.isPending()).toBe(false);
+    expect(store.isFulfilled()).toBe(false);
+    expect(store.error()).toBe('Échec du chargement des données');
+    expect(store.artworks()).toEqual([]);
+  }))
 
-      const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(1);
-      expect(filtered[0].artwork.name.value).toBe('Modern Painting');
+  it('should_enrichArtworksCorrectly_with_typesAndMaterials', () => {
+    const store = initStore({
+      artworks: mockArtworks,
+      artworkTypes: mockArtworkTypes,
+      materials: mockMaterials
     });
 
-    it('should filter artworks by status', () => {
-      store.updateStatusFilter('Draft');
-
-      const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(2);
-    });
-
-    it('should filter artworks by status - no matches', () => {
-      store.updateStatusFilter('Sold');
-
-      const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(0);
-    });
-
-    it('should filter artworks by type', () => {
-      store.updateTypeFilter('type-2');
-
-      const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(1);
-      expect(filtered[0].artwork.artworkTypeId).toBe('type-2');
-    });
-
-    it('should combine multiple filters correctly', () => {
-      store.updateSearchTerm('Classical');
-      store.updateStatusFilter('Draft');
-      store.updateTypeFilter('type-2');
-
-      const filtered = store.filteredArtworks();
-      expect(filtered).toHaveLength(1);
-      expect(filtered[0].artwork.name.value).toBe('Classical Sculpture');
-    });
-
-    it('should clear all filters', () => {
-      store.updateSearchTerm('test');
-      store.updateStatusFilter('Draft');
-      store.updateTypeFilter('type-1');
-
-      store.clearFilters();
-
-      expect(store.searchTerm()).toBe('');
-      expect(store.statusFilter()).toBeNull();
-      expect(store.typeFilter()).toBeNull();
-      expect(store.hasActiveFilters()).toBe(false);
-    });
-  });
-
-  describe('Filter state management', () => {
-    it('should detect active filters correctly', () => {
-      expect(store.hasActiveFilters()).toBe(false);
-
-      store.updateSearchTerm('test');
-      expect(store.hasActiveFilters()).toBe(true);
-
-      store.updateSearchTerm('');
-      store.updateStatusFilter('Draft');
-      expect(store.hasActiveFilters()).toBe(true);
-
-      store.updateStatusFilter(null);
-      store.updateTypeFilter('type-1');
-      expect(store.hasActiveFilters()).toBe(true);
-    });
-
-    it('should trim search terms correctly', () => {
-      store.updateSearchTerm('  test query  ');
-      expect(store.searchTerm()).toBe('test query');
-    });
-  });
-
-  describe('CRUD operations', () => {
-    it('should add artwork successfully', fakeAsync(() => {
-      const newArtwork = createMockArtwork({name: 'New Artwork'});
-      mockArtworkGateway.add.mockReturnValue(of(newArtwork));
-
-      store.addArtwork(newArtwork);
-      tick();
-
-      expect(store.artworks()).toContain(newArtwork);
-      expect(mockArtworkGateway.add).toHaveBeenCalledWith(newArtwork);
-    }));
-
-    it('should update artwork successfully', fakeAsync(() => {
-      // 1. Create the initial artwork instance
-      const existingArtwork = createMockArtwork();
-
-      // 2. Define the properties for the update
-      const updateProps = {
-        name: 'Updated Name',
-        description: existingArtwork.description.value,
-        artworkTypeId: existingArtwork.artworkTypeId,
-        materials: existingArtwork.materials.map(m => ({materialId: m.materialId, quantity: m.quantity})),
-        dimL: existingArtwork.dimensions.length,
-        dimW: existingArtwork.dimensions.width,
-        dimH: existingArtwork.dimensions.height,
-        dimUnit: existingArtwork.dimensions.unit,
-        weightCategory: existingArtwork.weightCategory,
-        hoursSpent: existingArtwork.hoursSpent,
-        creationYear: existingArtwork.creationYear,
-      };
-
-      // 3. Create the updated artwork instance by calling the domain method
-      const updateResult = existingArtwork.update(updateProps);
-      if (updateResult.isFailure) {
-        throw new Error('Test setup failed: could not update artwork');
+    const expectedEnrichedArtworks = [
+      {
+        artwork: mockArtworks[0],
+        artworkType: mockArtworkTypes[0],
+        artworkMaterials: [mockMaterials[0], mockMaterials[2]]
+      },
+      {
+        artwork: mockArtworks[1],
+        artworkType: mockArtworkTypes[1],
+        artworkMaterials: [mockMaterials[1], mockMaterials[0], mockMaterials[3]]
+      },
+      {
+        artwork: mockArtworks[2],
+        artworkType: mockArtworkTypes[2],
+        artworkMaterials: [mockMaterials[4]]
       }
-      const updatedArtwork = updateResult.getValue();
+    ];
 
-      // 4. Setup initial state in the store
-      mockArtworkGateway.getAll.mockReturnValue(of([existingArtwork]));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
-      mockMaterialGateway.getAll.mockReturnValue(of([]));
-      store.loadAllData();
-      tick();
-
-      // 5. Mock the gateway update call and execute the store method
-      mockArtworkGateway.update.mockReturnValue(of(updatedArtwork));
-      store.updateArtwork(updatedArtwork);
-      tick();
-
-      // 6. Assert the state was updated correctly
-      const artworks = store.artworks();
-      expect(artworks).toHaveLength(1);
-      expect(artworks[0].name.value).toBe('Updated Name');
-      expect(artworks[0].id).toBe(existingArtwork.id); // Verify ID is preserved
-    }));
-
-    it('should delete artwork successfully', fakeAsync(() => {
-      const artworkToDelete = createMockArtwork();
-
-      mockArtworkGateway.getAll.mockReturnValue(of([artworkToDelete]));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
-      mockMaterialGateway.getAll.mockReturnValue(of([]));
-      store.loadAllData();
-      tick();
-
-      mockArtworkGateway.delete.mockReturnValue(of(undefined));
-      store.deleteArtwork(artworkToDelete.id);
-      tick();
-
-      expect(store.artworks()).toHaveLength(0);
-      expect(mockArtworkGateway.delete).toHaveBeenCalledWith(artworkToDelete.id);
-    }));
-
-    it('should handle CRUD operation errors', fakeAsync(() => {
-      const artwork = createMockArtwork();
-      mockArtworkGateway.add.mockReturnValue(throwError(() => new Error('Server error')));
-
-      store.addArtwork(artwork);
-      tick();
-
-      expect(store.error()).toBe('Échec de l\'ajout de l\'œuvre');
-    }));
+    expect(store.enrichedArtworks()).toEqual(expectedEnrichedArtworks);
   });
 
-  describe('Computed state logic', () => {
-    it('should calculate isEmpty correctly', () => {
-      expect(store.isEmpty()).toBe(true);
-      expect(store.totalArtworks()).toBe(0);
+  describe('Write Operations', () => {
+    describe('addArtwork', () => {
+      it('should add the new artwork to the state on success', fakeAsync(() => {
+        const store = initStore();
+        const newArtwork = mockArtworks[0];
+        const addSpy = jest.spyOn(artworkGateway, 'add').mockReturnValue(of(newArtwork));
+
+        store.addArtwork(newArtwork);
+        tick();
+
+        expect(addSpy).toHaveBeenCalledWith(newArtwork);
+        expect(store.artworks()).toHaveLength(1);
+        expect(store.artworks()[0]).toEqual(newArtwork);
+        expect(store.isFulfilled()).toBe(true);
+      }));
+
+      it('should set an error state on failure', fakeAsync(() => {
+        const store = initStore();
+        const newArtwork = mockArtworks[0];
+        const error = new Error('Gateway failure');
+        const addSpy = jest.spyOn(artworkGateway, 'add').mockReturnValue(throwError(() => error));
+
+        store.addArtwork(newArtwork);
+        tick();
+
+        expect(addSpy).toHaveBeenCalled();
+        expect(store.artworks()).toHaveLength(0)
+        expect(store.error()).toBe('Échec de l\'ajout de l\'œuvre');
+      }));
     });
 
-    it('should detect no results state correctly', fakeAsync(() => {
-      const artwork = createMockArtwork({name: 'Test Artwork'});
-      mockArtworkGateway.getAll.mockReturnValue(of([artwork]));
-      mockArtworkTypeGateway.getAll.mockReturnValue(of([]));
-      mockMaterialGateway.getAll.mockReturnValue(of([]));
+    describe('updateArtwork', () => {
+      it('should update the artwork in the state on success', fakeAsync(() => {
+        const store = initStore({artworks: [mockArtworks[0]]});
+        const updatedArtwork = Artwork.hydrate({
+          ...mockArtworks[0],
+          name: {value: 'Updated Name'}
+        });
+        const updateSpy = jest.spyOn(artworkGateway, 'update').mockReturnValue(of(updatedArtwork));
 
-      store.loadAllData();
-      tick();
+        store.updateArtwork(updatedArtwork);
+        tick();
 
-      expect(store.hasNoResults()).toBe(false);
+        expect(updateSpy).toHaveBeenCalledWith(updatedArtwork);
+        expect(store.artworks()[0].name.value).toBe('Updated Name');
+        expect(store.isFulfilled()).toBe(true);
+      }));
 
-      store.updateSearchTerm('nonexistent');
-      expect(store.hasNoResults()).toBe(true);
-      expect(store.filteredCount()).toBe(0);
-    }));
+      it('should set an error state on failure and not update the artwork', fakeAsync(() => {
+        const originalArtwork = mockArtworks[0];
+        const store = initStore({artworks: [originalArtwork]});
+        const updatedArtwork = Artwork.hydrate({
+          ...originalArtwork,
+          name: {value: 'Updated Name That Fails'}
+        });
+        const error = new Error('Update failed');
+        jest.spyOn(artworkGateway, 'update').mockReturnValue(throwError(() => error));
+
+        store.updateArtwork(updatedArtwork);
+        tick();
+
+        expect(store.artworks()[0].name.value).toBe(originalArtwork.name.value);
+        expect(store.error()).toBe('Échec de la mise à jour de l\'œuvre');
+      }));
+    });
+    describe('deleteArtwork', () => {
+      it('should remove the artwork from the state on success', fakeAsync(() => {
+        const artworkToDelete = mockArtworks[0];
+        const store = initStore({artworks: mockArtworks});
+        const deleteSpy = jest.spyOn(artworkGateway, 'delete').mockReturnValue(of(undefined));
+
+        store.deleteArtwork(artworkToDelete.id);
+        tick();
+
+        expect(deleteSpy).toHaveBeenCalledWith(artworkToDelete.id);
+        expect(store.artworks()).toHaveLength(mockArtworks.length - 1);
+        expect(store.artworks().find(a => a.id === artworkToDelete.id)).toBeUndefined();
+        expect(store.isFulfilled()).toBe(true);
+      }));
+
+      it('should set an error state on failure and not remove the artwork', fakeAsync(() => {
+        const artworkToDelete = mockArtworks[0];
+        const store = initStore({artworks: mockArtworks});
+        const error = new Error('Delete failed');
+        jest.spyOn(artworkGateway, 'delete').mockReturnValue(throwError(() => error));
+
+        store.deleteArtwork(artworkToDelete.id);
+        tick();
+
+        expect(store.artworks()).toHaveLength(mockArtworks.length);
+        expect(store.error()).toBe('Échec de la suppression de l\'œuvre');
+      }));
+    });
+  });
+
+  describe('Filtering Logic', () => {
+    describe('by Search Term', () => {
+      it('should filter by a term present in the artwork name', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        store.updateSearchTerm('Table');
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table');
+      });
+
+      it('should filter by a term present in the artwork description', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        store.updateSearchTerm('artisanal');
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Vase');
+      });
+
+      it('should filter by a term present in the artwork type name', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        // "Sculpture" est dans le nom du type mais pas dans le nom/description de l'oeuvre
+        store.updateSearchTerm('Sculpture');
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Envol');
+      });
+
+      it('should be case-insensitive', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        store.updateSearchTerm('rivière'); // en minuscule
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table Basse "Rivière"');
+      });
+
+      it('should trim whitespace from the search term', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        store.updateSearchTerm('  Rivière  '); // avec espaces
+        expect(store.filteredCount()).toBe(1);
+      });
+    });
+
+    describe('by Type Filter', () => {
+      it('should filter by a specific artwork type ID', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        const vaseTypeId = mockArtworkTypes.find(t => t.name.value === 'Vase')!.id;
+        store.updateTypeFilter(vaseTypeId);
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Vase');
+      });
+    });
+
+    describe('by Status Filter', () => {
+      it('should filter by a specific status', () => {
+        const artworkInStock = Artwork.hydrate({
+          id: 'art-instock-1',
+          name: {value: 'Vase en stock'},
+          description: {value: '...'},
+          artworkTypeId: mockArtworkTypes[0].id,
+          materials: [],
+          dimensions: {length: 1, width: 1, height: 1, unit: 'cm'},
+          weightCategory: 'LessThan1kg',
+          hoursSpent: 5,
+          creationYear: 2024,
+          status: 'InStock',
+        });
+
+        const artworkSold = Artwork.hydrate({
+          id: 'art-sold-1',
+          name: {value: 'Table vendue'},
+          description: {value: '...'},
+          artworkTypeId: mockArtworkTypes[1].id,
+          materials: [],
+          dimensions: {length: 1, width: 1, height: 1, unit: 'cm'},
+          weightCategory: 'MoreThan5kg',
+          hoursSpent: 20,
+          creationYear: 2023,
+          status: 'Sold',
+        });
+
+        const store = initStore({
+          artworks: [artworkInStock, artworkSold],
+          artworkTypes: mockArtworkTypes,
+        });
+        store.updateStatusFilter('InStock');
+
+        expect(store.filteredCount()).toBe(1);
+        expect(store.filteredArtworks()[0].artwork.id).toBe('art-instock-1');
+        expect(store.filteredArtworks()[0].artwork.status).toBe('InStock');
+      });
+    });
+
+    describe('with Combined Filters and Edge Cases', () => {
+      it('should combine a search term and a type filter correctly', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        const tableTypeId = mockArtworkTypes.find(t => t.name.value === 'Table')!.id;
+
+        store.updateSearchTerm('Rivière');
+        store.updateTypeFilter(tableTypeId);
+
+        expect(store.filteredCount()).toBe(1);
+      });
+
+      it('should return no results when filters conflict', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        const vaseTypeId = mockArtworkTypes.find(t => t.name.value === 'Vase')!.id;
+
+        store.updateSearchTerm('Rivière');
+        store.updateTypeFilter(vaseTypeId);
+
+        expect(store.filteredCount()).toBe(0);
+      });
+
+      it('should update hasNoResults signal correctly', () => {
+        const store = initStore({artworks: mockArtworks});
+        expect(store.hasNoResults()).toBe(false);
+        store.updateSearchTerm('zzzzzzzzzz');
+        expect(store.hasNoResults()).toBe(true);
+      });
+
+      it('should update hasActiveFilters signal correctly', () => {
+        const store = initStore();
+        expect(store.hasActiveFilters()).toBe(false);
+        store.updateSearchTerm('test');
+        expect(store.hasActiveFilters()).toBe(true);
+      });
+
+      it('should clear all filters and reset the list', () => {
+        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
+        store.updateSearchTerm('Rivière');
+        store.updateTypeFilter(mockArtworkTypes[0].id);
+        expect(store.filteredCount()).toBe(0);
+
+        store.clearFilters();
+
+        expect(store.filteredCount()).toBe(mockArtworks.length);
+        expect(store.searchTerm()).toBe('');
+        expect(store.typeFilter()).toBe(null);
+        expect(store.statusFilter()).toBe(null);
+        expect(store.hasActiveFilters()).toBe(false);
+      });
+    });
   });
 });
