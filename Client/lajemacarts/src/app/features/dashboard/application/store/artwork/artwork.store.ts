@@ -23,14 +23,11 @@ export interface EnrichedArtwork {
   readonly artworkMaterials: Material[];
 }
 
-// ✅ ÉTAT PUR - Seulement les données brutes du domaine + filtres UI
 export type ArtworkState = {
-  // Données du domaine (immutables)
   readonly artworks: Artwork[];
   readonly artworkTypes: ArtworkType[];
   readonly materials: Material[];
 
-  // État des filtres UI (responsabilité du store)
   readonly searchTerm: string;
   readonly statusFilter: string | null;
   readonly typeFilter: string | null;
@@ -50,7 +47,6 @@ export const initialArtworkState = new InjectionToken<ArtworkState>('ArtworkStat
 export const ArtworkStore = signalStore(
   withState<ArtworkState>(() => inject(initialArtworkState)),
   withRequestStatus(),
-
   withComputed((store) => ({
     artworkTypeMap: computed(() =>
       new Map(store.artworkTypes().map(type => [type.id, type]))
@@ -91,10 +87,7 @@ export const ArtworkStore = signalStore(
         };
       });
     }),
-
-
   })),
-
   withComputed((store) => ({
     filteredArtworks: computed(() => {
       const enriched = store.enrichedArtworks();
