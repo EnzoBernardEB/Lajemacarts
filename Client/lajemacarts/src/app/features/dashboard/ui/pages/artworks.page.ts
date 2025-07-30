@@ -2,30 +2,33 @@ import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/cor
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
-import {ArtworksHeaderComponent} from '../artworks/components/header/artwork-header.component';
 import {ArtworksTableComponent} from '../artworks/components/artwork-table/artwork-table.component';
 import {ArtworkFilters, ArtworksFiltersComponent} from '../artworks/components/filter/filter.component';
-import {ArtworksEmptyStateComponent} from '../artworks/components/empty-state/empty-state.component';
 import {ArtworkStore} from '../../application/store/artwork/artwork.store';
 import {ArtworkListViewModel, ArtworkMapper} from '../mappers/artwork.mapper';
+import {ArtworksEmptyStateComponent} from '../../../../shared/components/empty-state/empty-state.component';
+import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 
 
 @Component({
   selector: 'lajemacarts-artworks-page',
   imports: [
     MatProgressSpinnerModule,
-
-    ArtworksHeaderComponent,
     ArtworksTableComponent,
     ArtworksFiltersComponent,
     ArtworksEmptyStateComponent,
     MatButton,
-    MatIcon
+    MatIcon,
+    PageHeaderComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
-      <lajemacarts-artworks-header (addClicked)="onAddArtwork()"/>
+      <lajemacarts-dashboard-header
+        [title]="'Mes Œuvres'"
+        [addButtonText]="'Ajouter une Œuvre'"
+        (addClicked)="onAddArtwork()">
+      </lajemacarts-dashboard-header>
 
       <lajemacarts-artworks-filters
         [filters]="filters()"

@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {By} from '@angular/platform-browser';
-import {ArtworksHeaderComponent} from './artwork-header.component';
+import {ArtworksHeaderComponent} from './artwork-dashboard-header.component';
 
 describe('ArtworksHeaderComponent', () => {
   let component: ArtworksHeaderComponent;

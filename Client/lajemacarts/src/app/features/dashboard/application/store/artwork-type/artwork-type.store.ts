@@ -1,6 +1,5 @@
 import {computed, inject, InjectionToken} from '@angular/core';
 import {patchState, signalStore, withComputed, withMethods, withState} from '@ngrx/signals';
-import {Material} from '../../../domain/models/material';
 
 import {
   setError,
@@ -8,59 +7,60 @@ import {
   setPending,
   withRequestStatus
 } from '../../../../../shared/store/request-status.features';
-import {MaterialGateway} from '../../../domain/ ports/material.gateway';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
 import {catchError, EMPTY, pipe, switchMap, tap} from 'rxjs';
+import {ArtworkType} from '../../../domain/models/artwork-type';
+import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 
 
-export type MaterialState = {
-  readonly materials: Material[];
+export type ArtworkTypeState = {
+  readonly artworkTypes: ArtworkType[];
   readonly searchTerm: string;
 }
 
-export const initialMaterialState = new InjectionToken<MaterialState>('MaterialStateToken', {
+export const initialArtworkTypeState = new InjectionToken<ArtworkTypeState>('ArtworkTypeStateToken', {
   factory: () => ({
-    materials: [],
+    artworkTypes: [],
     searchTerm: ''
   }),
 });
 
-export const MaterialStore = signalStore(
-  withState<MaterialState>(() => inject(initialMaterialState)),
+export const ArtworkTypeStore = signalStore(
+  withState<ArtworkTypeState>(() => inject(initialArtworkTypeState)),
   withRequestStatus(),
   withComputed((store) => ({
-    isEmpty: computed(() => store.materials().length === 0),
-    totalMaterials: computed(() => store.materials().length),
+    isEmpty: computed(() => store.artworkTypes().length === 0),
+    totalArtworkTypes: computed(() => store.artworkTypes().length),
     hasActiveFilters: computed(() => {
       return store.searchTerm().length > 0
     }),
   })),
   withComputed((store) => ({
-    filteredMaterials: computed(() => {
-      const materials = store.materials();
+    filteredArtworkTypes: computed(() => {
+      const artworkTypes = store.artworkTypes();
       const searchTerm = store.searchTerm().toLowerCase().trim();
       if (!store.hasActiveFilters()) {
-        return materials;
+        return artworkTypes;
       }
 
-      return materials.filter((material) => {
+      return artworkTypes.filter((artworkType) => {
         return !searchTerm ||
-          material.name.value.toLowerCase().includes(searchTerm);
+          artworkType.name.value.toLowerCase().includes(searchTerm);
       });
     }),
   })),
   withComputed(store => ({
-    filteredCount: computed(() => store.filteredMaterials().length),
+    filteredCount: computed(() => store.filteredArtworkTypes().length),
   })),
-  withMethods((store, materialGateway = inject(MaterialGateway)) => ({
-    loadMaterials: rxMethod<void>(
+  withMethods((store, artworkTypeGateway = inject(ArtworkTypeGateway)) => ({
+    loadArtworkTypes: rxMethod<void>(
       pipe(
         tap(() => patchState(store, setPending())),
-        switchMap(() => materialGateway.getAll().pipe(
-          tap((materials) => patchState(store, {materials}, setFulfilled())),
+        switchMap(() => artworkTypeGateway.getAll().pipe(
+          tap((artworkTypes) => patchState(store, {artworkTypes}, setFulfilled())),
           catchError((error) => {
             patchState(store, setError('Échec du chargement des données'));
-            console.error('Error loading materials data:', error);
+            console.error('Error loading artwork types data:', error);
             return EMPTY;
           })
         )),
