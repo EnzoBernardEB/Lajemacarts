@@ -8,7 +8,8 @@ export const DomainErrors = {
     PriceCannotBeNegative: new DomainError('Artwork.PriceCannotBeNegative', 'Le prix ne peut pas être négatif.'),
   },
   ArtworkType: {
-    NotFound: new DomainError('ArtworkType.NotFound', 'Le type est introuvable.')
+    NotFound: new DomainError('ArtworkType.NotFound', 'Le type est introuvable.'),
+    ProfitMultiplierMustBeAtLeastOne: new DomainError('ArtworkType.ProfitMultiplierMustBeAtLeastOne', 'Le multiplicateur de profit doit être au moins de 1')
   },
   Material: {
     QuantityMustBePositive: new DomainError('Material.QuantityMustBePositive', 'La quantité doiot être un nombre positif.'),

@@ -28,8 +28,14 @@ export const DASHBOARD_ROUTES: Routes = [
   //   data: {isEditMode: true},
   //   providers: [artworkGatewayProvider],
   // },
-  // {
-  //   path: 'materials',
-  //   loadComponent: () => import('./ui/materials/materials.page').then(m => m.MaterialsPageComponent),
-  // }
+  {
+    path: 'materials',
+    loadComponent: () => import('./ui/pages/materials.page').then(m => m.MaterialsPage),
+    providers: [materialGatewayProvider],
+  },
+  {
+    path: 'artwork-types',
+    loadComponent: () => import('./ui/pages/artwork-type.page').then(m => m.ArtworkTypesPageComponent),
+    providers: [artworkTypeGatewayProvider],
+  }
 ];

@@ -49,6 +49,7 @@ const artwork1Result = Artwork.create({
   weightCategory: 'Between1And5kg',
   hoursSpent: 6,
   creationYear: 2023,
+  sellingPrice: 150
 });
 
 const artwork2Result = Artwork.create({
@@ -63,6 +64,7 @@ const artwork2Result = Artwork.create({
   weightCategory: 'MoreThan5kg',
   hoursSpent: 18,
   creationYear: 2022,
+  sellingPrice: 6000
 });
 
 const artwork3Result = Artwork.create({
@@ -75,6 +77,7 @@ const artwork3Result = Artwork.create({
   weightCategory: 'MoreThan5kg',
   hoursSpent: 6,
   creationYear: 2024,
+  sellingPrice: 1442.10
 });
 
 const combinedArtworksResult = Result.combine([artwork1Result, artwork2Result, artwork3Result]);

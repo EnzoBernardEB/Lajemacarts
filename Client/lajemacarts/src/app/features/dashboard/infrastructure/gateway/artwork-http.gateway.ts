@@ -35,6 +35,7 @@ export class ArtworkHttpGateway extends ArtworkGateway {
       hoursSpent: artwork.hoursSpent,
       creationYear: artwork.creationYear,
       status: artwork.status,
+      sellingPrice: artwork.sellingPrice.amount
     };
   }
 

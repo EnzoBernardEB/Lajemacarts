@@ -14,7 +14,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button';
-import {Subject} from 'rxjs';
+import {Subject, tap} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
@@ -169,10 +169,9 @@ export class ArtworksFiltersComponent {
   private initializeSearchDebounce(): void {
     this.searchSubject.pipe(
       debounceTime(300),
+      tap(searchValue => this.searchFilterChange.emit(searchValue)),
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(searchValue => {
-      this.searchFilterChange.emit(searchValue);
-    });
+    ).subscribe();
   }
 
   protected onSearchChange(event: Event): void {

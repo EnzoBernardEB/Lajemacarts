@@ -1,0 +1,14 @@
+.deferred-placeholder {
+  min-height: 300px;
+  width: 100%;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+  min-height: 300px;
+}
