@@ -1,5 +1,5 @@
 import {computed, inject, InjectionToken} from '@angular/core';
-import {patchState, signalStore, withComputed, withMethods, withState} from '@ngrx/signals';
+import {patchState, signalStore, withComputed, withFeature, withMethods, withState} from '@ngrx/signals';
 
 import {
   setError,
@@ -11,6 +11,7 @@ import {rxMethod} from '@ngrx/signals/rxjs-interop';
 import {catchError, EMPTY, pipe, switchMap, tap} from 'rxjs';
 import {ArtworkType} from '../../../domain/models/artwork-type';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
+import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
 
 
 export type ArtworkTypeState = {
@@ -27,6 +28,7 @@ export const initialArtworkTypeState = new InjectionToken<ArtworkTypeState>('Art
 
 export const ArtworkTypeStore = signalStore(
   withState<ArtworkTypeState>(() => inject(initialArtworkTypeState)),
+  withFeature((store) => withSnapshot(store.artworkTypes)),
   withRequestStatus(),
   withComputed((store) => ({
     isEmpty: computed(() => store.artworkTypes().length === 0),
@@ -53,7 +55,7 @@ export const ArtworkTypeStore = signalStore(
     filteredCount: computed(() => store.filteredArtworkTypes().length),
   })),
   withMethods((store, artworkTypeGateway = inject(ArtworkTypeGateway)) => ({
-    loadArtworkTypes: rxMethod<void>(
+    loadAll: rxMethod<void>(
       pipe(
         tap(() => patchState(store, setPending())),
         switchMap(() => artworkTypeGateway.getAll().pipe(
@@ -65,6 +67,44 @@ export const ArtworkTypeStore = signalStore(
           })
         )),
       ),
+    ),
+
+    update: rxMethod<{ id: string; name: string; basePrice: number; profitMultiplier: number }>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((updatePayload) => {
+          const artworkTypeToUpdate = store.artworkTypes().find(at => at.id === updatePayload.id);
+          if (!artworkTypeToUpdate) {
+            patchState(store, setError('Type d\'œuvre non trouvé.'));
+            return EMPTY;
+          }
+          const updateResult = artworkTypeToUpdate.update(updatePayload);
+          if (updateResult.isFailure) {
+            patchState(store, setError(updateResult.error!.message));
+            return EMPTY;
+          }
+          const updatedArtworkType = updateResult.getValue();
+
+          patchState(store, {
+            artworkTypes: store.artworkTypes().map(at => at.id === updatedArtworkType.id ? updatedArtworkType : at)
+          });
+
+          return artworkTypeGateway.update(updatedArtworkType).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((error) => {
+              const snapshot = store.snapshot();
+              if (snapshot) {
+                patchState(store, {artworkTypes: snapshot});
+              }
+              patchState(store, setError(error.message || 'Update Failed'));
+              return EMPTY;
+            })
+          );
+        })
+      )
     ),
     updateSearchTerm: (term: string) => {
       patchState(store, {searchTerm: term.trim()});

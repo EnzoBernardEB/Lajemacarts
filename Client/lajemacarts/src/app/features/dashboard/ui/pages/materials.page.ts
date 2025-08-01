@@ -9,7 +9,6 @@ import {MaterialMapper} from '../mappers/material.mapper';
 import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
 
-
 @Component({
   selector: 'lajemacarts-material-page',
   imports: [
@@ -29,6 +28,7 @@ import {SearchTextFilterComponent} from '../components/filter/search-text-filter
         [addButtonText]="'Ajouter un Matériau'"
         (addClicked)="onAddMaterial()">
       </lajemacarts-dashboard-header>
+
       <lajemacarts-text-search-filter
         [label]="'Rechercher un matériau'"
         [placeholder]="'Nom du matériau...'"
@@ -38,41 +38,44 @@ import {SearchTextFilterComponent} from '../components/filter/search-text-filter
         (clearFilters)="store.updateSearchTerm('')">
       </lajemacarts-text-search-filter>
 
-      @if (store.isPending()) {
+      @defer (when !store.isPending()) {
+        @if (store.filteredCount() === 0) {
+          @if (store.hasActiveFilters()) {
+            <lajemacarts-artworks-empty-state
+              icon="search_off"
+              title="Aucun matériaux ne correspond à vos filtres"
+              message="Essayez d'ajuster vos critères de recherche ou effacez les filtres."
+              buttonText="Effacer les Filtres"
+              buttonIcon="clear"
+              buttonColor="accent"
+              (buttonClick)="store.clearFilters()"/>
+          } @else {
+            <lajemacarts-artworks-empty-state
+              title="Aucun matériaux pour le moment"
+              message="Commencez à construire votre collection en ajoutant les premiers matériaux."
+              buttonText="Ajouter votre premier matériau"
+              (buttonClick)="onAddMaterial()"/>
+          }
+        } @else {
+          <lajemacarts-materials-table [materials]="listViewModels()"/>
+          <div class="results-info">
+            <p>
+              Affichage de {{ store.filteredCount() }} sur {{ store.totalMaterials() }} matériaux
+              @if (store.hasActiveFilters()) {
+                <button mat-button class="clear-filters-btn" (click)="store.clearFilters()">
+                  <mat-icon>clear</mat-icon>
+                  Effacer les filtres
+                </button>
+              }
+            </p>
+          </div>
+        }
+      } @placeholder {
+        <div class="deferred-placeholder"></div>
+      } @loading {
         <div class="loading-container">
           <mat-spinner diameter="40"></mat-spinner>
           <p>Chargement des matériaux...</p>
-        </div>
-      } @else if (store.filteredCount() === 0) {
-        @if (store.hasActiveFilters()) {
-          <lajemacarts-artworks-empty-state
-            icon="search_off"
-            title="Aucun matériaux ne correspond à vos filtres"
-            message="Essayez d'ajuster vos critères de recherche ou effacez les filtres."
-            buttonText="Effacer les Filtres"
-            buttonIcon="clear"
-            buttonColor="accent"
-            (buttonClick)="store.clearFilters()"/>
-        } @else {
-          <lajemacarts-artworks-empty-state
-            title="Aucun matériaux pour le moment"
-            message="Commencez à construire votre collection en ajoutant les premiers matériaux."
-            buttonText="Ajouter votre premier matériau"
-            (buttonClick)="onAddMaterial()"/>
-        }
-      } @else {
-        <lajemacarts-materials-table [materials]="listViewModels()"/>
-
-        <div class="results-info">
-          <p>
-            Affichage de {{ store.filteredCount() }} sur {{ store.totalMaterials() }} œuvres
-            @if (store.hasActiveFilters()) {
-              <button mat-button class="clear-filters-btn" (click)="store.clearFilters()">
-                <mat-icon>clear</mat-icon>
-                Effacer les filtres
-              </button>
-            }
-          </p>
         </div>
       }
     </div>
@@ -92,13 +95,10 @@ export class MaterialsPage {
   }
 
   private initializeData(): void {
-    this.store.loadMaterials();
+    this.store.loadAll();
   }
-
 
   protected onAddMaterial(): void {
     console.log('Navigate to add artwork');
   }
-
-
 }

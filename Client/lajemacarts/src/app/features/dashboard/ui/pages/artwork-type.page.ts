@@ -1,10 +1,15 @@
-import {ChangeDetectionStrategy, Component, computed, effect, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit} from '@angular/core';
 import {ArtworkTypeStore} from '../../application/store/artwork-type/artwork-type.store';
 import {MatProgressSpinner} from '@angular/material/progress-spinner';
 import {ArtworkTypesTableComponent} from '../artwork-types/components/material-table/artwork-type-table.component';
+import {ArtworkTypeListViewModel, ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
 import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
-import {ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
+import {ArtworkTypeFormComponent} from '../artwork-types/components/form/artwork-type-form';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {toObservable} from '@angular/core/rxjs-interop';
+import {filter, take} from 'rxjs';
 
 @Component({
   selector: 'lajemacarts-artwork-types-page',
@@ -14,6 +19,7 @@ import {ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
     MatProgressSpinner,
     PageHeaderComponent,
     SearchTextFilterComponent,
+
   ],
   providers: [ArtworkTypeStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,17 +38,22 @@ import {ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
       (searchTermChange)="store.updateSearchTerm($event)"
       (clearFilters)="store.updateSearchTerm('')">
     </lajemacarts-text-search-filter>
-
-    @if (store.isPending()) {
-      <div class="spinner-container">
-        <mat-spinner diameter="50"></mat-spinner>
-      </div>
-    } @else {
+    @defer (on viewport) {
       <lajemacarts-artwork-types-table
         [artworkTypes]="viewModels()"
         (editArtworkType)="onEditArtworkType($event)"
         (deleteArtworkType)="onDeleteArtworkType($event)">
       </lajemacarts-artwork-types-table>
+    } @loading (minimum 500ms) {
+      <div class="spinner-container">
+        <mat-spinner diameter="50"></mat-spinner>
+      </div>
+    } @placeholder {
+      <div class="placeholder-container">
+        <div class="spinner-container">
+          <mat-spinner diameter="50"></mat-spinner>
+        </div>
+      </div>
     }
   `,
   styles: `
@@ -51,39 +62,63 @@ import {ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
       padding: 2rem;
     }
 
-    .spinner-container {
+    .spinner-container, .placeholder-container {
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 4rem;
+      min-height: 200px;
     }
   `
 })
 export class ArtworkTypesPageComponent implements OnInit {
   readonly store = inject(ArtworkTypeStore);
+  private readonly dialog = inject(MatDialog)
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly injector = inject(Injector);
 
   readonly viewModels = computed(() =>
     ArtworkTypeMapper.toListViewModels(this.store.filteredArtworkTypes())
   );
 
-  constructor() {
-    effect(() => {
-      console.log('ArtworkTypeStore request status:', this.store.requestStatus());
-    });
-  }
-
   ngOnInit(): void {
-    this.store.loadArtworkTypes();
+    this.store.loadAll();
   }
 
   onAddArtworkType(): void {
-    // Logique pour ouvrir un formulaire d'ajout
     console.log('Action: Ajouter un nouveau type d\'œuvre');
   }
 
-  onEditArtworkType(artworkType: { id: string }): void {
-    // Logique pour naviguer vers le formulaire d'édition
-    console.log('Action: Modifier le type d\'œuvre avec l\'ID:', artworkType.id);
+  onEditArtworkType(artworkType: ArtworkTypeListViewModel): void {
+    const dialogRef = this.dialog.open(ArtworkTypeFormComponent, {
+      width: '850px',
+      data: artworkType
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const status$ = toObservable(this.store.requestStatus, {injector: this.injector});
+
+        this.store.update({id: artworkType.id, ...result});
+
+        status$.pipe(
+          filter(status => status === 'fulfilled' || typeof status === 'object'),
+          take(1)
+        ).subscribe(finalStatus => {
+          if (finalStatus === 'fulfilled') {
+            this.snackBar.open('Mise à jour réussie !', 'OK', {
+              duration: 3000,
+              panelClass: ['success-snackbar'],
+            });
+          } else {
+            this.snackBar.open(`Échec de la mise à jour : ${this.store.error()}`, 'Fermer', {
+              duration: 5000,
+              panelClass: ['error-snackbar'],
+            });
+          }
+        });
+      }
+    });
   }
 
   onDeleteArtworkType(artworkType: { id: string }): void {

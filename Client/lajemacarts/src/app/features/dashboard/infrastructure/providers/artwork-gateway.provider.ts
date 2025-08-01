@@ -76,6 +76,7 @@ const ARTWORKS_DATA: Artwork[] = [
     weightCategory: 'Between1And5kg',
     hoursSpent: 4,
     creationYear: 2023,
+    sellingPrice: 150
   }).getValue(),
 
   Artwork.create({
@@ -93,6 +94,7 @@ const ARTWORKS_DATA: Artwork[] = [
     weightCategory: 'MoreThan5kg',
     hoursSpent: 16,
     creationYear: 2022,
+    sellingPrice: 6000
   }).getValue(),
 
   Artwork.create({
@@ -109,7 +111,7 @@ const ARTWORKS_DATA: Artwork[] = [
     dimUnit: 'cm',
     weightCategory: 'MoreThan5kg',
     hoursSpent: 12,
-    creationYear: 2024,
+    creationYear: 2024, sellingPrice: 1442.10
   }).getValue(),
 ];
 

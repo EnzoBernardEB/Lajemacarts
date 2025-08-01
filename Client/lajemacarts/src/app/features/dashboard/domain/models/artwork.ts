@@ -19,6 +19,7 @@ interface ArtworkProps {
   weightCategory: WeightCategory;
   hoursSpent: number;
   creationYear: number;
+  sellingPrice: Money;
   status:
     ArtworkStatus;
 }
@@ -35,6 +36,7 @@ interface ArtworkUpdateProps {
   weightCategory: WeightCategory;
   hoursSpent: number;
   creationYear: number;
+  sellingPrice: number;
 }
 
 export class Artwork {
@@ -48,6 +50,7 @@ export class Artwork {
   public readonly hoursSpent: number;
   public readonly creationYear: number;
   public readonly status: ArtworkStatus;
+  public readonly sellingPrice: Money;
 
   private constructor(props: ArtworkProps) {
     this.id = props.id;
@@ -60,6 +63,8 @@ export class Artwork {
     this.hoursSpent = props.hoursSpent;
     this.creationYear = props.creationYear;
     this.status = props.status;
+    this.sellingPrice = props.sellingPrice;
+
   }
 
   public calculatePrice(type: ArtworkType, materialDetails: Material[]): Money {
@@ -94,16 +99,19 @@ export class Artwork {
     weightCategory: WeightCategory;
     hoursSpent: number;
     creationYear: number;
+    sellingPrice: number;
   }): Result<Artwork> {
     const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
     const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
+    const sellingPriceResult = Money.create(props.sellingPrice);
 
     const combinedResult = Result.combine([
       nameResult,
       descriptionResult,
       dimensionsResult,
+      sellingPriceResult,
       ...materialResults
     ]);
 
@@ -122,6 +130,7 @@ export class Artwork {
       hoursSpent: props.hoursSpent,
       creationYear: props.creationYear,
       status: 'Draft',
+      sellingPrice: sellingPriceResult.getValue(),
     });
 
     return Result.success<Artwork>(artwork);
@@ -131,6 +140,7 @@ export class Artwork {
     const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
+    const sellingPriceResult = Money.create(props.sellingPrice);
 
     const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
 
@@ -139,6 +149,7 @@ export class Artwork {
       nameResult,
       descriptionResult,
       dimensionsResult,
+      sellingPriceResult,
       ...materialResults
     ]);
 
@@ -157,6 +168,7 @@ export class Artwork {
       hoursSpent: props.hoursSpent,
       creationYear: props.creationYear,
       status: this.status,
+      sellingPrice: sellingPriceResult.getValue(),
     });
 
     return Result.success<Artwork>(updatedArtwork);
@@ -179,6 +191,7 @@ export class Artwork {
       hoursSpent: data.hoursSpent,
       creationYear: data.creationYear,
       status: data.status,
+      sellingPrice: Money.hydrate(data.sellingPrice),
     });
   }
 

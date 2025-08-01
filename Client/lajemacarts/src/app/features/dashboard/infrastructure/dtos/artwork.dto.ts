@@ -17,4 +17,5 @@ export interface ArtworkDto {
   hoursSpent: number;
   creationYear: number;
   status: ArtworkStatus;
+  sellingPrice: number;
 }

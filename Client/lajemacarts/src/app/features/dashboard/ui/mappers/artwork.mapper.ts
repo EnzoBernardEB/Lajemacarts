@@ -1,14 +1,25 @@
 import {EnrichedArtwork} from '../../application/store/artwork/artwork.store';
 import {ArtworkType} from '../../domain/models/artwork-type';
+import {Dimensions} from '../../domain/models/value-objects/dimensions.model';
+import {Material} from '../../domain/models/material';
+import {ArtworkStatus} from '../../domain/models/enums/enums';
 
-
+/**
+ * Mapper pour transformer les modèles du domaine Artwork en ViewModels pour la couche UI.
+ * Cette classe est le pont entre la logique métier riche et les données plates et simples
+ * nécessaires à l'affichage.
+ */
 export class ArtworkMapper {
+
+  // --- MÉTHODES DE MAPPING PRINCIPALES ---
+
   static toListViewModels(enrichedArtworks: EnrichedArtwork[]): ArtworkListViewModel[] {
     return enrichedArtworks.map(enriched => this.toListViewModel(enriched));
   }
 
   static toListViewModel(enriched: EnrichedArtwork): ArtworkListViewModel {
-    const price = this.calculateDisplayPrice(enriched);
+    const calculatedPrice = this.calculateReferencePrice(enriched);
+    const sellingPrice = enriched.artwork.sellingPrice.amount;
 
     return {
       id: enriched.artwork.id,
@@ -18,8 +29,11 @@ export class ArtworkMapper {
       status: enriched.artwork.status,
       statusLabel: this.mapStatusToLabel(enriched.artwork.status),
       statusClass: this.mapStatusToClass(enriched.artwork.status),
-      price,
-      formattedPrice: this.formatPrice(price),
+      sellingPrice: sellingPrice,
+      formattedSellingPrice: this.formatPrice(sellingPrice),
+      calculatedPrice: calculatedPrice,
+      formattedCalculatedPrice: `~ ${this.formatPrice(calculatedPrice)}`,
+      priceComparisonStatus: this.getComparisonStatus(sellingPrice, calculatedPrice),
       compactDimensions: this.formatCompactDimensions(enriched.artwork.dimensions),
       thumbnailUrl: this.getImageUrl(enriched.artwork.id, 'thumbnail'),
       originalData: enriched
@@ -31,7 +45,8 @@ export class ArtworkMapper {
   }
 
   static toGalleryViewModel(enriched: EnrichedArtwork): ArtworkGalleryViewModel {
-    const price = this.calculateDisplayPrice(enriched);
+    const calculatedPrice = this.calculateReferencePrice(enriched);
+    const sellingPrice = enriched.artwork.sellingPrice.amount;
 
     return {
       id: enriched.artwork.id,
@@ -39,31 +54,19 @@ export class ArtworkMapper {
       description: enriched.artwork.description.value,
       typeName: enriched.artworkType?.name.value ?? 'Type inconnu',
       year: enriched.artwork.creationYear,
-      status: enriched.artwork.status,
-      statusLabel: this.mapStatusToLabel(enriched.artwork.status),
-      statusClass: this.mapStatusToClass(enriched.artwork.status),
-      price,
-      formattedPrice: this.formatPrice(price),
-
-      fullDimensions: this.formatFullDimensions(enriched.artwork.dimensions),
-      materials: this.formatMaterials(enriched.artworkMaterials),
-
-      imageUrls: {
-        thumbnail: this.getImageUrl(enriched.artwork.id, 'thumbnail'),
-        medium: this.getImageUrl(enriched.artwork.id, 'medium'),
-        large: this.getImageUrl(enriched.artwork.id, 'large'),
-        fullsize: this.getImageUrl(enriched.artwork.id, 'fullsize')
-      },
-
+      sellingPrice: sellingPrice,
+      formattedSellingPrice: this.formatPrice(sellingPrice),
+      priceComparisonStatus: this.getComparisonStatus(sellingPrice, calculatedPrice),
+      imageUrls: this.getImageUrlSet(enriched.artwork.id),
       seoTitle: `${enriched.artwork.name.value} - ${enriched.artwork.creationYear}`,
       seoDescription: this.generateSeoDescription(enriched),
-
       originalData: enriched
     };
   }
 
   static toDetailViewModel(enriched: EnrichedArtwork): ArtworkDetailViewModel {
-    const price = this.calculateDisplayPrice(enriched);
+    const calculatedPrice = this.calculateReferencePrice(enriched);
+    const sellingPrice = enriched.artwork.sellingPrice.amount;
 
     return {
       id: enriched.artwork.id,
@@ -75,58 +78,38 @@ export class ArtworkMapper {
       statusLabel: this.mapStatusToLabel(enriched.artwork.status),
       statusClass: this.mapStatusToClass(enriched.artwork.status),
       statusIcon: this.mapStatusToIcon(enriched.artwork.status),
-      price,
-      formattedPrice: this.formatPrice(price),
-
+      sellingPrice: sellingPrice,
+      formattedSellingPrice: this.formatPrice(sellingPrice),
+      calculatedPrice: calculatedPrice,
+      formattedCalculatedPrice: `~ ${this.formatPrice(calculatedPrice)}`,
+      priceComparisonStatus: this.getComparisonStatus(sellingPrice, calculatedPrice),
       fullDimensions: this.formatFullDimensions(enriched.artwork.dimensions),
-      dimensionsBreakdown: {
-        length: `${enriched.artwork.dimensions.length} ${enriched.artwork.dimensions.unit}`,
-        width: `${enriched.artwork.dimensions.width} ${enriched.artwork.dimensions.unit}`,
-        height: `${enriched.artwork.dimensions.height} ${enriched.artwork.dimensions.unit}`,
-        unit: enriched.artwork.dimensions.unit
-      },
-
-      materials: this.formatDetailedMaterials(enriched.artworkMaterials),
-      materialsList: enriched.artworkMaterials.map(m => m.name.value),
-
-      imageUrls: {
-        thumbnail: this.getImageUrl(enriched.artwork.id, 'thumbnail'),
-        medium: this.getImageUrl(enriched.artwork.id, 'medium'),
-        large: this.getImageUrl(enriched.artwork.id, 'large'),
-        fullsize: this.getImageUrl(enriched.artwork.id, 'fullsize')
-      },
-
+      materials: this.formatMaterials(enriched.artworkMaterials),
+      imageUrls: this.getImageUrlSet(enriched.artwork.id),
       originalData: enriched
     };
   }
 
+  // --- MÉTHODES UTILITAIRES PUBLIQUES ---
+
   static toFilterOptions(artworkTypes: ArtworkType[]): ArtworkTypeOption[] {
     return artworkTypes.map(type => ({
       id: type.id,
-      name: type.name.value,
-      count: 0 // Sera calculé par le composant si nécessaire
+      name: type.name.value
     }));
   }
 
   static getStatusOptions(): ArtworkStatusOption[] {
     return [
-      {id: 'Draft', label: 'Brouillon', icon: 'edit', color: 'warn'},
-      {id: 'InStock', label: 'En Stock', icon: 'inventory', color: 'primary'},
-      {id: 'Sold', label: 'Vendu', icon: 'check_circle', color: 'accent'}
+      {id: 'Draft', label: 'Brouillon', icon: 'edit'},
+      {id: 'InStock', label: 'En Stock', icon: 'inventory'},
+      {id: 'Sold', label: 'Vendu', icon: 'check_circle'}
     ];
   }
 
-  static calculateStatistics<T extends { price: number; statusLabel: string }>(
-    viewModels: T[]
-  ): ArtworkStatistics {
-    const totalValue = viewModels.reduce((sum, vm) => sum + vm.price, 0);
+  static calculateStatistics(viewModels: { sellingPrice: number }[]): ArtworkStatistics {
+    const totalValue = viewModels.reduce((sum, vm) => sum + vm.sellingPrice, 0);
     const averagePrice = viewModels.length > 0 ? totalValue / viewModels.length : 0;
-
-    const statusDistribution = new Map<string, number>();
-    viewModels.forEach(vm => {
-      const current = statusDistribution.get(vm.statusLabel) || 0;
-      statusDistribution.set(vm.statusLabel, current + 1);
-    });
 
     return {
       count: viewModels.length,
@@ -134,178 +117,145 @@ export class ArtworkMapper {
       formattedTotalValue: this.formatPrice(totalValue),
       averagePrice,
       formattedAveragePrice: this.formatPrice(averagePrice),
-      statusDistribution
     };
   }
 
-  private static calculateDisplayPrice(enriched: EnrichedArtwork): number {
-    const {artwork, artworkType, artworkMaterials} = enriched;
+  // --- MÉTHODES PRIVÉES DE LOGIQUE INTERNE ---
 
+  private static calculateReferencePrice(enriched: EnrichedArtwork): number {
+    const {artwork, artworkType, artworkMaterials} = enriched;
     if (!artworkType || artworkMaterials.length === 0) {
       return 0;
     }
-
+    // Appel à la logique du domaine
     return artwork.calculatePrice(artworkType, artworkMaterials).amount;
   }
 
-  private static formatPrice(amount: number): string {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+  private static getComparisonStatus(sellingPrice: number, calculatedPrice: number): 'lower' | 'higher' | 'equal' {
+    if (sellingPrice < calculatedPrice) return 'lower';
+    if (sellingPrice > calculatedPrice) return 'higher';
+    return 'equal';
   }
 
-  private static mapStatusToLabel(status: string): string {
-    const statusMap: Record<string, string> = {
+  // ... Fonctions de formatage
+  private static formatPrice(amount: number): string {
+    return new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(amount);
+  }
+
+  private static mapStatusToLabel(status: ArtworkStatus): string {
+    const statusMap: Record<ArtworkStatus, string> = {
       'Draft': 'Brouillon',
       'InStock': 'En Stock',
-      'Sold': 'Vendu'
+      'Sold': 'Vendu',
+      'Archived': 'Archivé'
     };
-    return statusMap[status] || status;
+    return statusMap[status] ?? status;
   }
 
-  private static mapStatusToClass(status: string): string {
-    return `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+  private static mapStatusToClass(status: ArtworkStatus): string {
+    return `status-${status.toLowerCase()}`;
   }
 
-  private static mapStatusToIcon(status: string): string {
-    const iconMap: Record<string, string> = {
+  private static mapStatusToIcon(status: ArtworkStatus): string {
+    const iconMap: Record<ArtworkStatus, string> = {
       'Draft': 'edit',
       'InStock': 'inventory',
-      'Sold': 'check_circle'
+      'Sold': 'check_circle',
+      'Archived': 'archive'
     };
     return iconMap[status] || 'help';
   }
 
-  private static formatCompactDimensions(dimensions: {
-    length: number;
-    width: number;
-    height: number;
-    unit: string
-  }): string {
-    const {length, width, height, unit} = dimensions;
-    return `${length}×${width}×${height} ${unit}`;
+  private static formatCompactDimensions(dimensions: Dimensions): string {
+    return `${dimensions.length}×${dimensions.width}×${dimensions.height} ${dimensions.unit}`;
   }
 
-  private static formatFullDimensions(dimensions: {
-    length: number;
-    width: number;
-    height: number;
-    unit: string
-  }): string {
-    const {length, width, height, unit} = dimensions;
-    return `Longueur: ${length} ${unit}, Largeur: ${width} ${unit}, Hauteur: ${height} ${unit}`;
+  private static formatFullDimensions(dimensions: Dimensions): string {
+    return `L: ${dimensions.length}${dimensions.unit} × l: ${dimensions.width}${dimensions.unit} × H: ${dimensions.height}${dimensions.unit}`;
   }
 
-  private static formatMaterials(materials: any[]): string {
+  private static formatMaterials(materials: Material[]): string {
     return materials.map(m => m.name.value).join(', ');
   }
 
-  private static formatDetailedMaterials(materials: any[]): string {
-    return materials
-      .map(m => `${m.name.value} (${m.type || 'Non spécifié'})`)
-      .join(', ');
+  private static getImageUrlSet(artworkId: string) {
+    return {
+      thumbnail: this.getImageUrl(artworkId, 'thumbnail'),
+      medium: this.getImageUrl(artworkId, 'medium'),
+      large: this.getImageUrl(artworkId, 'large'),
+    }
   }
 
-  private static getImageUrl(artworkId: string, size: 'thumbnail' | 'medium' | 'large' | 'fullsize'): string {
-    const sizeMap = {
-      thumbnail: '150x150',
-      medium: '400x400',
-      large: '800x600',
-      fullsize: 'original'
-    };
-
-    return `https://picsum.photos/${sizeMap[size]}`;
+  private static getImageUrl(artworkId: string, size: 'thumbnail' | 'medium' | 'large'): string {
+    const sizeMap = {thumbnail: '150', medium: '400', large: '800'};
+    return `https://picsum.photos/seed/${artworkId}/${sizeMap[size]}`;
   }
 
   private static generateSeoDescription(enriched: EnrichedArtwork): string {
-    const {artwork, artworkType} = enriched;
-    return `${artwork.name.value}, œuvre de type ${artworkType?.name.value || 'inconnu'} créée en ${artwork.creationYear}. ${artwork.description.value.substring(0, 100)}...`;
+    return `${enriched.artwork.name.value}, œuvre de type ${enriched.artworkType?.name.value ?? 'inconnu'} créée en ${enriched.artwork.creationYear}. ${enriched.artwork.description.value.substring(0, 100)}...`;
   }
 }
 
-export interface ArtworkListViewModel {
+// --- INTERFACES DES VIEWMODELS ---
+
+interface BaseArtworkViewModel {
   readonly id: string;
   readonly name: string;
   readonly typeName: string;
   readonly year: number;
-  readonly status: string;
+  readonly originalData: EnrichedArtwork;
+}
+
+export interface ArtworkListViewModel extends BaseArtworkViewModel {
+  readonly status: ArtworkStatus;
   readonly statusLabel: string;
   readonly statusClass: string;
-  readonly price: number;
-  readonly formattedPrice: string;
+  readonly sellingPrice: number;
+  readonly formattedSellingPrice: string;
+  readonly calculatedPrice: number;
+  readonly formattedCalculatedPrice: string;
+  readonly priceComparisonStatus: 'lower' | 'higher' | 'equal';
   readonly compactDimensions: string;
   readonly thumbnailUrl: string;
-  readonly originalData: EnrichedArtwork;
 }
 
-export interface ArtworkGalleryViewModel {
-  readonly id: string;
-  readonly name: string;
+export interface ArtworkGalleryViewModel extends BaseArtworkViewModel {
   readonly description: string;
-  readonly typeName: string;
-  readonly year: number;
-  readonly status: string;
-  readonly statusLabel: string;
-  readonly statusClass: string;
-  readonly price: number;
-  readonly formattedPrice: string;
-  readonly fullDimensions: string;
-  readonly materials: string;
-  readonly imageUrls: {
-    thumbnail: string;
-    medium: string;
-    large: string;
-    fullsize: string;
-  };
+  readonly sellingPrice: number;
+  readonly formattedSellingPrice: string;
+  readonly priceComparisonStatus: 'lower' | 'higher' | 'equal';
+  readonly imageUrls: { thumbnail: string; medium: string; large: string; };
   readonly seoTitle: string;
   readonly seoDescription: string;
-  readonly originalData: EnrichedArtwork;
 }
 
-export interface ArtworkDetailViewModel {
-  readonly id: string;
-  readonly name: string;
+export interface ArtworkDetailViewModel extends BaseArtworkViewModel {
   readonly description: string;
-  readonly typeName: string;
-  readonly year: number;
-  readonly status: string;
+  readonly status: ArtworkStatus;
   readonly statusLabel: string;
   readonly statusClass: string;
   readonly statusIcon: string;
-  readonly price: number;
-  readonly formattedPrice: string;
+  readonly sellingPrice: number;
+  readonly formattedSellingPrice: string;
+  readonly calculatedPrice: number;
+  readonly formattedCalculatedPrice: string;
+  readonly priceComparisonStatus: 'lower' | 'higher' | 'equal';
   readonly fullDimensions: string;
-  readonly dimensionsBreakdown: {
-    length: string;
-    width: string;
-    height: string;
-    unit: string;
-  };
   readonly materials: string;
-  readonly materialsList: string[];
-  readonly imageUrls: {
-    thumbnail: string;
-    medium: string;
-    large: string;
-    fullsize: string;
-  };
-  readonly createdAt?: string;
-  readonly updatedAt?: string;
-  readonly originalData: EnrichedArtwork;
+  readonly imageUrls: { thumbnail: string; medium: string; large: string; };
 }
+
+// --- INTERFACES DES OPTIONS ET STATISTIQUES ---
 
 export interface ArtworkTypeOption {
   readonly id: string;
   readonly name: string;
-  readonly count?: number;
 }
 
 export interface ArtworkStatusOption {
-  readonly id: string;
+  readonly id: ArtworkStatus;
   readonly label: string;
   readonly icon: string;
-  readonly color: string;
 }
 
 export interface ArtworkStatistics {
@@ -314,5 +264,4 @@ export interface ArtworkStatistics {
   readonly formattedTotalValue: string;
   readonly averagePrice: number;
   readonly formattedAveragePrice: string;
-  readonly statusDistribution: Map<string, number>;
 }

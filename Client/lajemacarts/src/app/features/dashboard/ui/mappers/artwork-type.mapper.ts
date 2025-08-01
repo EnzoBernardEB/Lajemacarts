@@ -3,6 +3,8 @@ import {ArtworkType} from '../../domain/models/artwork-type';
 export interface ArtworkTypeListViewModel {
   readonly id: string;
   readonly name: string;
+  readonly basePrice: number;
+  readonly profitMultiplier: number;
   readonly formattedBasePrice: string;
   readonly formattedProfitMultiplier: string;
 }
@@ -24,6 +26,8 @@ export class ArtworkTypeMapper {
     return {
       id: artworkType.id,
       name: artworkType.name.value,
+      basePrice: artworkType.basePrice.amount,
+      profitMultiplier: artworkType.profitMultiplier,
       formattedBasePrice: this.formatPrice(artworkType.basePrice.amount),
       formattedProfitMultiplier: this.formatMultiplier(artworkType.profitMultiplier),
     };

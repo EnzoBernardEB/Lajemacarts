@@ -53,7 +53,7 @@ export const MaterialStore = signalStore(
     filteredCount: computed(() => store.filteredMaterials().length),
   })),
   withMethods((store, materialGateway = inject(MaterialGateway)) => ({
-    loadMaterials: rxMethod<void>(
+    loadAll: rxMethod<void>(
       pipe(
         tap(() => patchState(store, setPending())),
         switchMap(() => materialGateway.getAll().pipe(
