@@ -1,5 +1,5 @@
 import {computed, inject, InjectionToken} from '@angular/core';
-import {patchState, signalStore, withComputed, withMethods, withState} from '@ngrx/signals';
+import {patchState, signalStore, withComputed, withFeature, withMethods, withState} from '@ngrx/signals';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
 import {catchError, EMPTY, forkJoin, pipe, switchMap, tap} from 'rxjs';
 
@@ -16,6 +16,8 @@ import {
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
+import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
+import {ArtworkStatus} from '../../../domain/models/enums/enums';
 
 export interface EnrichedArtwork {
   readonly artwork: Artwork;
@@ -32,7 +34,11 @@ export type ArtworkState = {
   readonly statusFilter: string | null;
   readonly typeFilter: string | null;
 }
-
+export type ArtworkCreationPayload = Parameters<typeof Artwork.create>[0];
+export type UpdateArtworkPayload = ArtworkCreationPayload & {
+  id: string;
+  status: ArtworkStatus;
+};
 export const initialArtworkState = new InjectionToken<ArtworkState>('ArtworkStateToken', {
   factory: () => ({
     artworks: [],
@@ -47,6 +53,7 @@ export const initialArtworkState = new InjectionToken<ArtworkState>('ArtworkStat
 export const ArtworkStore = signalStore(
   withState<ArtworkState>(() => inject(initialArtworkState)),
   withRequestStatus(),
+  withFeature((store) => withSnapshot(store.artworks)),
   withComputed((store) => ({
     artworkTypeMap: computed(() =>
       new Map(store.artworkTypes().map(type => [type.id, type]))
@@ -151,6 +158,91 @@ export const ArtworkStore = signalStore(
       )
     ),
 
+    addArtwork: rxMethod<ArtworkCreationPayload>(
+      pipe(
+        tap(() => patchState(store, setPending())),
+        switchMap((payload) => {
+          const artworkResult = Artwork.create(payload);
+
+          if (artworkResult.isFailure) {
+            patchState(store, setError(artworkResult.error!.message));
+            return EMPTY;
+          }
+
+          const newArtwork = artworkResult.getValue();
+
+          return artworkGateway.add(newArtwork).pipe(
+            tap((createdArtwork) => {
+              patchState(store, (state) => ({
+                artworks: [...state.artworks, createdArtwork]
+              }), setFulfilled());
+            }),
+            catchError((error) => {
+              patchState(store, setError('Échec de l\'ajout de l\'œuvre'));
+              console.error('Error adding artwork:', error);
+              return EMPTY;
+            })
+          );
+        }),
+      ),
+    ),
+    updateArtwork: rxMethod<UpdateArtworkPayload>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((payload) => {
+          const artworkToUpdate = store.artworks().find(a => a.id === payload.id);
+          if (!artworkToUpdate) {
+            patchState(store, setError('Œuvre non trouvée.'));
+            return EMPTY;
+          }
+
+          const updateResult = artworkToUpdate.update(payload);
+          if (updateResult.isFailure) {
+            patchState(store, setError(updateResult.error!.message));
+            return EMPTY;
+          }
+
+          const updatedArtwork = updateResult.getValue();
+
+          patchState(store, (state) => ({
+            artworks: state.artworks.map(a => a.id === updatedArtwork.id ? updatedArtwork : a)
+          }));
+
+          return artworkGateway.update(updatedArtwork).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((error) => {
+              patchState(store, { artworks: store.snapshot()! }, setError('Échec de la mise à jour'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
+
+    deleteArtwork: rxMethod<string>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((id) => {
+          patchState(store, (state) => ({
+            artworks: state.artworks.filter(a => a.id !== id)
+          }));
+
+          return artworkGateway.delete(id).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((error) => {
+              patchState(store, { artworks: store.snapshot()! }, setError('Échec de la suppression'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
     updateSearchTerm: (searchTerm: string) => {
       patchState(store, {searchTerm: searchTerm.trim()});
     },
@@ -170,60 +262,5 @@ export const ArtworkStore = signalStore(
         typeFilter: null
       });
     },
-
-    addArtwork: rxMethod<Artwork>(
-      pipe(
-        tap(() => patchState(store, setPending())),
-        switchMap((artwork) => artworkGateway.add(artwork).pipe(
-          tap((newArtwork) => patchState(store, (state) => ({
-            artworks: [...state.artworks, newArtwork]
-          }))),
-          tap(() => patchState(store, setFulfilled())),
-          catchError((error) => {
-            patchState(store, setError('Échec de l\'ajout de l\'œuvre'));
-            console.error('Error adding artwork:', error);
-            return EMPTY;
-          })
-        )),
-      ),
-    ),
-
-    updateArtwork: rxMethod<Artwork>(
-      pipe(
-        tap(() => patchState(store, setPending())),
-        switchMap((artwork) => artworkGateway.update(artwork).pipe(
-          tap((updatedArtwork) => {
-            patchState(store, (state) => ({
-              artworks: state.artworks.map(a =>
-                a.id === updatedArtwork.id ? updatedArtwork : a
-              )
-            }));
-          }),
-          tap(() => patchState(store, setFulfilled())),
-          catchError((error) => {
-            patchState(store, setError('Échec de la mise à jour de l\'œuvre'));
-            console.error('Error updating artwork:', error);
-            return EMPTY;
-          })
-        )),
-      ),
-    ),
-
-    deleteArtwork: rxMethod<string>(
-      pipe(
-        tap(() => patchState(store, setPending())),
-        switchMap((id) => artworkGateway.delete(id).pipe(
-          tap(() => patchState(store, (state) => ({
-            artworks: state.artworks.filter(a => a.id !== id)
-          }))),
-          tap(() => patchState(store, setFulfilled())),
-          catchError((error) => {
-            patchState(store, setError('Échec de la suppression de l\'œuvre'));
-            console.error('Error deleting artwork:', error);
-            return EMPTY;
-          })
-        )),
-      ),
-    ),
   }))
 );

@@ -8,6 +8,8 @@ import {ArtworkDto} from '../../infrastructure/dtos/artwork.dto';
 import {ArtworkMaterial} from './value-objects/artwork-material';
 import {ArtworkType} from './artwork-type';
 import {Material} from './material';
+import {DomainError} from '../../../../shared/core/error.model';
+import {DomainErrors} from '../../../../shared/domain/errors/domain-errors';
 
 interface ArtworkProps {
   id: string;
@@ -37,6 +39,7 @@ interface ArtworkUpdateProps {
   hoursSpent: number;
   creationYear: number;
   sellingPrice: number;
+  status: ArtworkStatus;
 }
 
 export class Artwork {
@@ -66,32 +69,41 @@ export class Artwork {
     this.sellingPrice = props.sellingPrice;
 
   }
-
-  public calculatePrice(type: ArtworkType, materialDetails: Material[]): Money {
-    const materialCost = this.materials.reduce((total, item) => {
+  public static calculatePrice(
+    type: ArtworkType,
+    materialDetails: Material[],
+    materials: { materialId: string; quantity: number }[],
+    hoursSpent: number
+  ): Money {
+    const materialCost = materials.reduce((total, item) => {
       const materialInfo = materialDetails.find(m => m.id === item.materialId);
       if (!materialInfo) {
-        console.warn(`Material with id ${item.materialId} not found.`);
         return total;
       }
-      const cost = materialInfo.pricePerUnit.amount * item.quantity;
-      return total + cost;
+      return total + (materialInfo.pricePerUnit.amount * item.quantity);
     }, 0);
 
-    const laborCost = type.basePrice.amount * this.hoursSpent;
-
+    const laborCost = type.basePrice.amount * hoursSpent;
     const totalBaseCost = materialCost + laborCost;
-
     const finalPriceAmount = totalBaseCost * type.profitMultiplier;
 
     return Money.create(finalPriceAmount).getValue();
+  }
+
+  public getCalculatedPrice(type: ArtworkType, materialDetails: Material[]): Money {
+    return Artwork.calculatePrice(
+      type,
+      materialDetails,
+      this.materials,
+      this.hoursSpent
+    );
   }
 
   public static create(props: {
     name: string;
     description: string;
     artworkTypeId: string;
-    materials: { materialId: string; quantity: number }[];
+    materials: { materialId: string; unit: string, quantity: number }[];
     dimL: number;
     dimW: number;
     dimH: number;
@@ -104,7 +116,7 @@ export class Artwork {
     const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
-    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
+    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId,m.unit, m.quantity));
     const sellingPriceResult = Money.create(props.sellingPrice);
 
     const combinedResult = Result.combine([
@@ -142,7 +154,7 @@ export class Artwork {
     const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
     const sellingPriceResult = Money.create(props.sellingPrice);
 
-    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity));
+    const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId,m.unit, m.quantity));
 
 
     const combinedResult = Result.combine([
@@ -167,7 +179,7 @@ export class Artwork {
       weightCategory: props.weightCategory,
       hoursSpent: props.hoursSpent,
       creationYear: props.creationYear,
-      status: this.status,
+      status: props.status,
       sellingPrice: sellingPriceResult.getValue(),
     });
 
@@ -180,7 +192,7 @@ export class Artwork {
       name: Name.hydrate(data.name.value),
       description: ArtworkDescription.hydrate(data.description.value),
       artworkTypeId: data.artworkTypeId,
-      materials: data.materials.map(m => ArtworkMaterial.create(m.materialId, m.quantity).getValue()),
+      materials: data.materials.map(m => ArtworkMaterial.create(m.materialId,m.unit, m.quantity).getValue()),
       dimensions: Dimensions.hydrate(
         data.dimensions.length,
         data.dimensions.width,
@@ -193,6 +205,24 @@ export class Artwork {
       status: data.status,
       sellingPrice: Money.hydrate(data.sellingPrice),
     });
+  }
+
+  public markAsInStock(): Result<Artwork> {
+    if (this.status !== 'Draft')
+      return Result.failure(DomainErrors.Artwork.NotDraft);
+
+    return Result.success(new Artwork({ ...this, status: 'InStock' }));
+  }
+
+  public markAsSold(): Result<Artwork> {
+    if (this.status !== 'InStock')
+      return Result.failure(DomainErrors.Artwork.NotInStock);
+
+    return Result.success(new Artwork({ ...this, status: 'Sold' }));
+  }
+
+  public markAsArchived(): Result<Artwork> {
+    return Result.success(new Artwork({ ...this, status: 'Archived' }));
   }
 
   public isPublishable(): boolean {

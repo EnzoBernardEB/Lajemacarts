@@ -13,7 +13,9 @@ export class Money {
     if (amount < 0) {
       return Result.failure<Money>(DomainErrors.Artwork.PriceCannotBeNegative);
     }
-    return Result.success<Money>(new Money(amount));
+    const roundedAmount = Math.round(amount * 100) / 100;
+
+    return Result.success<Money>(new Money(roundedAmount));
   }
 
   public static hydrate(amount: number): Money {

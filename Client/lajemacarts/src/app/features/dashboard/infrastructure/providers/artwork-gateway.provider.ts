@@ -66,8 +66,8 @@ const ARTWORKS_DATA: Artwork[] = [
     description: 'Un vase artisanal tourné à la main, parfait pour des fleurs séchées.',
     artworkTypeId: ARTWORK_TYPES_DATA[0].id,
     materials: [
-      {materialId: MATERIALS_DATA[0].id, quantity: 3},
-      {materialId: MATERIALS_DATA[2].id, quantity: 0.5}
+      {materialId: MATERIALS_DATA[0].id,unit: MATERIALS_DATA[0].unit,quantity: 3},
+      {materialId: MATERIALS_DATA[2].id,unit: MATERIALS_DATA[2].unit,quantity: 0.5}
     ],
     dimL: 15,
     dimW: 15,
@@ -84,8 +84,8 @@ const ARTWORKS_DATA: Artwork[] = [
     description: 'Table en bois de chêne massif avec une coulée de résine époxy bleue.',
     artworkTypeId: ARTWORK_TYPES_DATA[2].id,
     materials: [
-      {materialId: MATERIALS_DATA[1].id, quantity: 0.72},
-      {materialId: MATERIALS_DATA[3].id, quantity: 2}
+      {materialId: MATERIALS_DATA[1].id,unit: MATERIALS_DATA[1].unit, quantity: 0.72},
+      {materialId: MATERIALS_DATA[3].id,unit: MATERIALS_DATA[4].unit, quantity: 2}
     ],
     dimL: 120,
     dimW: 60,
@@ -102,8 +102,8 @@ const ARTWORKS_DATA: Artwork[] = [
     description: 'Sculpture abstraite en métal représentant un oiseau prenant son envol.',
     artworkTypeId: ARTWORK_TYPES_DATA[1].id,
     materials: [
-      {materialId: MATERIALS_DATA[4].id, quantity: 4},
-      {materialId: MATERIALS_DATA[2].id, quantity: 0.5}
+      {materialId: MATERIALS_DATA[4].id, unit: MATERIALS_DATA[4].unit, quantity: 4},
+      {materialId: MATERIALS_DATA[2].id, unit: MATERIALS_DATA[2].unit, quantity: 0.5}
     ],
     dimL: 40,
     dimW: 20,

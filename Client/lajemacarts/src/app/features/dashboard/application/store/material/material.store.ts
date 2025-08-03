@@ -1,5 +1,5 @@
 import {computed, inject, InjectionToken} from '@angular/core';
-import {patchState, signalStore, withComputed, withMethods, withState} from '@ngrx/signals';
+import {patchState, signalStore, withComputed, withFeature, withMethods, withState} from '@ngrx/signals';
 import {Material} from '../../../domain/models/material';
 
 import {
@@ -11,6 +11,8 @@ import {
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
 import {catchError, EMPTY, pipe, switchMap, tap} from 'rxjs';
+import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
+import {DomainErrors} from '../../../../../shared/domain/errors/domain-errors';
 
 
 export type MaterialState = {
@@ -28,6 +30,7 @@ export const initialMaterialState = new InjectionToken<MaterialState>('MaterialS
 export const MaterialStore = signalStore(
   withState<MaterialState>(() => inject(initialMaterialState)),
   withRequestStatus(),
+  withFeature((store) => withSnapshot(store.materials)),
   withComputed((store) => ({
     isEmpty: computed(() => store.materials().length === 0),
     totalMaterials: computed(() => store.materials().length),
@@ -65,6 +68,78 @@ export const MaterialStore = signalStore(
           })
         )),
       ),
+    ),
+    add: rxMethod<{ name: string; pricePerUnit: number; unit: string; }>(
+      pipe(
+        tap(() => patchState(store, setPending())),
+        switchMap((payload) => {
+          const createResult = Material.create(payload);
+          if (createResult.isFailure) {
+            patchState(store, setError(createResult.error!.message));
+            return EMPTY;
+          }
+          const newMaterial = createResult.getValue();
+          return materialGateway.add(newMaterial).pipe(
+            tap((createdMaterial) => {
+              patchState(store, { materials: [...store.materials(), createdMaterial] }, setFulfilled());
+            }),
+            catchError((err) => {
+              patchState(store, setError(err.message || 'Add Failed'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
+
+    update: rxMethod<{ id: string, name: string; pricePerUnit: number; unit: string; }>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((payload) => {
+          const materialToUpdate = store.materials().find(m => m.id === payload.id);
+          if (!materialToUpdate) {
+            patchState(store, setError(DomainErrors.Material.NotFound.message));
+            return EMPTY;
+          }
+          const updateResult = materialToUpdate.update(payload);
+          if (updateResult.isFailure) {
+            patchState(store, setError(updateResult.error!.message));
+            return EMPTY;
+          }
+          const updatedMaterial = updateResult.getValue();
+          patchState(store, { materials: store.materials().map(m => m.id === updatedMaterial.id ? updatedMaterial : m) });
+          return materialGateway.update(updatedMaterial).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((err) => {
+              patchState(store, { materials: store.snapshot()! }, setError(err.message || 'Update Failed'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
+
+    delete: rxMethod<string>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((id) => {
+          // Mise à jour optimiste
+          patchState(store, { materials: store.materials().filter(m => m.id !== id) });
+          return materialGateway.delete(id).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((err) => {
+              patchState(store, { materials: store.snapshot()! }, setError(err.message || 'Delete Failed'));
+              return EMPTY;
+            })
+          )
+        })
+      )
     ),
     updateSearchTerm: (term: string) => {
       patchState(store, {searchTerm: term.trim()});

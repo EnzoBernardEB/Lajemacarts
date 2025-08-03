@@ -1,11 +1,11 @@
 import {ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit} from '@angular/core';
 import {ArtworkTypeStore} from '../../application/store/artwork-type/artwork-type.store';
 import {MatProgressSpinner} from '@angular/material/progress-spinner';
-import {ArtworkTypesTableComponent} from '../artwork-types/components/material-table/artwork-type-table.component';
+import {ArtworkTypesTableComponent} from './components/artwork-type-table/artwork-type-table.component';
 import {ArtworkTypeListViewModel, ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
 import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
-import {ArtworkTypeFormComponent} from '../artwork-types/components/form/artwork-type-form';
+import {ArtworkTypeFormComponent} from './components/form/artwork-type-form';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {toObservable} from '@angular/core/rxjs-interop';
@@ -86,7 +86,34 @@ export class ArtworkTypesPageComponent implements OnInit {
   }
 
   onAddArtworkType(): void {
-    console.log('Action: Ajouter un nouveau type d\'œuvre');
+    const dialogRef = this.dialog.open(ArtworkTypeFormComponent, {
+      width: '850px',
+    });
+
+    dialogRef.afterClosed().pipe(
+      filter(result => !!result)
+    ).subscribe(result => {
+      const status$ = toObservable(this.store.requestStatus, { injector: this.injector });
+
+      this.store.add(result);
+
+      status$.pipe(
+        filter(status => status === 'fulfilled' || typeof status === 'object'),
+        take(1)
+      ).subscribe(finalStatus => {
+        if (finalStatus === 'fulfilled') {
+          this.snackBar.open('Type d\'œuvre ajouté avec succès !', 'OK', {
+            duration: 3000,
+            panelClass: ['success-snackbar'],
+          });
+        } else {
+          this.snackBar.open(`Échec de l'ajout : ${this.store.error()}`, 'Fermer', {
+            duration: 5000,
+            panelClass: ['error-snackbar'],
+          });
+        }
+      });
+    });
   }
 
   onEditArtworkType(artworkType: ArtworkTypeListViewModel): void {
@@ -121,8 +148,32 @@ export class ArtworkTypesPageComponent implements OnInit {
     });
   }
 
-  onDeleteArtworkType(artworkType: { id: string }): void {
-    // Logique pour confirmer et supprimer
+  onDeleteArtworkType(artworkType: { id: string; name: string }): void {
+    const confirmation = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer le type "${artworkType.name}" ?`
+    );
 
+    if (confirmation) {
+      const status$ = toObservable(this.store.requestStatus, { injector: this.injector });
+
+      this.store.delete(artworkType.id);
+
+      status$.pipe(
+        filter(status => status === 'fulfilled' || typeof status === 'object'),
+        take(1)
+      ).subscribe(finalStatus => {
+        if (finalStatus === 'fulfilled') {
+          this.snackBar.open('Suppression réussie !', 'OK', {
+            duration: 3000,
+            panelClass: ['success-snackbar'],
+          });
+        } else {
+          this.snackBar.open(`Échec de la suppression : ${this.store.error()}`, 'Fermer', {
+            duration: 5000,
+            panelClass: ['error-snackbar'],
+          });
+        }
+      });
+    }
   }
 }

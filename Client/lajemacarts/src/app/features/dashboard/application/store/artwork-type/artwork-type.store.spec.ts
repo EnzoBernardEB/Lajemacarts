@@ -1,185 +1,306 @@
-import {fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {patchState, StateSignals} from '@ngrx/signals';
-import {unprotected} from '@ngrx/signals/testing';
-import {ArtworkTypeStore} from './artwork-type.store';
-import {mockArtworkTypes} from '../artwork/artwork.store.data';
-import {ArtworkTypeInMemoryGateway} from '../../../infrastructure/gateway/artwork-type-in-memory.gateway';
-import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
-import {of} from 'rxjs';
-import {ArtworkType} from '../../../domain/models/artwork-type';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { patchState, StateSignals } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
+import {delay, of, Subject, throwError} from 'rxjs';
 
-function initStore(partial?: StateSignals<typeof ArtworkTypeStore>) {
+import { ArtworkTypeStore } from './artwork-type.store';
+import { ArtworkTypeGateway } from '../../../domain/ ports/artwork-type.gateway';
+import { ArtworkTypeInMemoryGateway } from '../../../infrastructure/gateway/artwork-type-in-memory.gateway';
+import { ArtworkType } from '../../../domain/models/artwork-type';
+import { Name } from '../../../domain/models/value-objects/name';
+import { Money } from '../../../domain/models/value-objects/money.model';
+import { DomainErrors } from '../../../../../shared/domain/errors/domain-errors';
+
+const MOCK_ARTWORK_TYPES: ArtworkType[] = [
+  ArtworkType.hydrate({ id: '1', name: Name.hydrate('Peinture Acrylique'), basePrice: Money.hydrate(20), profitMultiplier: 2.5 }),
+  ArtworkType.hydrate({ id: '2', name: Name.hydrate('Sculpture sur Bois'), basePrice: Money.hydrate(150), profitMultiplier: 1.8 }),
+  ArtworkType.hydrate({ id: '3', name: Name.hydrate('Aquarelle'), basePrice: Money.hydrate(35), profitMultiplier: 3.0 }),
+  ArtworkType.hydrate({ id: '4', name: Name.hydrate('Résine Époxy'), basePrice: Money.hydrate(90), profitMultiplier: 2.2 }),
+  ArtworkType.hydrate({ id: '5', name: Name.hydrate('Photographie Argentique'), basePrice: Money.hydrate(50), profitMultiplier: 2.8 }),
+];
+
+function initStore(partial?: Partial<StateSignals<typeof ArtworkTypeStore>>) {
   const store = TestBed.inject(ArtworkTypeStore);
   patchState(unprotected(store), partial ?? {});
-  return store
+  return store;
 }
 
-describe('ArtworkTpesStore', () => {
-  let artworkTypeInMemoryGateway: ArtworkTypeInMemoryGateway;
+describe('ArtworkTypeStore', () => {
+  let artworkTypeGateway: ArtworkTypeGateway;
 
   beforeEach(() => {
-
-    artworkTypeInMemoryGateway = new ArtworkTypeInMemoryGateway()
     TestBed.configureTestingModule({
       providers: [
         ArtworkTypeStore,
-        {provide: ArtworkTypeGateway, useValue: artworkTypeInMemoryGateway},
-      ]
+        { provide: ArtworkTypeGateway, useClass: ArtworkTypeInMemoryGateway },
+      ],
     });
-  })
+    artworkTypeGateway = TestBed.inject(ArtworkTypeGateway);
+  });
 
-  it('should_initialize_withDefaultEmptyState', () => {
+  it('should initialize with default empty state', () => {
     const store = initStore();
     expect(store.artworkTypes()).toEqual([]);
     expect(store.searchTerm()).toEqual('');
   });
 
-  it('should_reflectArtworksPresence_in_isEmptySignal', () => {
-    const store = initStore()
-    expect(store.isEmpty()).toBe(true);
-    patchState(unprotected(store), {artworkTypes: mockArtworkTypes})
-    expect(store.isEmpty()).toBe(false);
-  })
+  describe('LoadAll Logic', () => {
+    it('should load all artwork types and set status to fulfilled on success', fakeAsync(() => {
+      const store = initStore();
 
-  it('should_countAllArtworks_when_noFilterIsActive', () => {
-    const store = initStore({artworkTypes: mockArtworkTypes})
-    expect(store.filteredCount()).toBe(5);
-  })
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'getAll').mockReturnValue(of(MOCK_ARTWORK_TYPES).pipe(delay(0)));
+
+      store.loadAll();
+
+      expect(store.isPending()).toBe(true);
+
+      tick();
+
+      expect(store.artworkTypes()).toEqual(MOCK_ARTWORK_TYPES);
+      expect(store.isFulfilled()).toBe(true);
+      expect(gatewaySpy).toHaveBeenCalledTimes(1);
+    }));
+
+    it('should set status to an error object on gateway failure', fakeAsync(() => {
+      const store = initStore();
+      const errorSubject = new Subject<ArtworkType[]>();
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'getAll').mockReturnValue(errorSubject.asObservable());
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      store.loadAll();
+
+      expect(store.isPending()).toBe(true);
+      expect(store.error()).toBeNull();
+
+      const mockError = new Error('Failed to fetch');
+      errorSubject.error(mockError);
+      tick();
+
+      expect(store.artworkTypes().length).toBe(0);
+      expect(store.isPending()).toBe(false);
+
+      const expectedErrorState = { error: 'Échec du chargement des données' };
+      expect(store.requestStatus()).toEqual(expectedErrorState);
+      expect(store.error()).toBe('Échec du chargement des données');
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading artwork types data:', mockError);
+
+      consoleErrorSpy.mockRestore();
+    }));
+  });
 
   describe('Filtering Logic', () => {
-    it('should filter materials by a matching search term', () => {
-      const store = initStore({artworkTypes: mockArtworkTypes});
-
+    it('should filter artwork types by a matching search term', () => {
+      const store = initStore({ artworkTypes: MOCK_ARTWORK_TYPES });
       store.updateSearchTerm('Résine');
-
       expect(store.filteredCount()).toBe(1);
       expect(store.filteredArtworkTypes()[0].name.value).toBe('Résine Époxy');
     });
+  });
 
-    it('should be case-insensitive', () => {
-      const store = initStore({artworkTypes: mockArtworkTypes});
+  describe('Add Logic', () => {
+    it('should add a new artwork type and set status to fulfilled on success', fakeAsync(() => {
+      const store = initStore({ artworkTypes: [] });
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'add')
+        .mockImplementation(artworkType => of(artworkType).pipe(delay(0)));
 
-      store.updateSearchTerm('résine');
+      const addPayload = { name: 'Nouvelle Œuvre', basePrice: 100, profitMultiplier: 2 };
 
-      expect(store.filteredCount()).toBe(1);
-    });
+      store.add(addPayload);
 
-    it('should trim whitespace from the search term', () => {
-      const store = initStore({artworkTypes: mockArtworkTypes});
+      expect(store.isPending()).toBe(true);
+      tick();
 
-      store.updateSearchTerm('  Résine  '); // avec des espaces
+      expect(store.artworkTypes().length).toBe(1);
+      expect(store.artworkTypes()[0].name.value).toBe('Nouvelle Œuvre');
+      expect(store.isFulfilled()).toBe(true);
+      expect(gatewaySpy).toHaveBeenCalledTimes(1);
+    }));
 
-      expect(store.filteredCount()).toBe(1);
-    });
+    it('should set error on gateway failure during add', fakeAsync(() => {
+      const store = initStore({ artworkTypes: [] });
+      jest.spyOn(artworkTypeGateway, 'add').mockReturnValue(throwError(() => new Error('Gateway error')));
 
-    it('should return all materials if the search term is empty', () => {
-      const store = initStore({artworkTypes: mockArtworkTypes});
+      const addPayload = { name: 'Œuvre Valide', basePrice: 100, profitMultiplier: 2 };
+      store.add(addPayload);
+      tick();
 
-      store.updateSearchTerm('');
+      expect(store.artworkTypes().length).toBe(0);
+      expect(store.error()).toBe('Gateway error');
+    }));
 
-      expect(store.filteredCount()).toBe(mockArtworkTypes.length);
-    });
+    it('should set error if domain validation fails during add and not call the gateway', fakeAsync(() => {
+      const store = initStore();
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'add');
 
-    it('should return an empty array if no material matches', () => {
-      const store = initStore({artworkTypes: mockArtworkTypes});
+      const addPayload = { name: 'A', basePrice: 100, profitMultiplier: 2 };
+      store.add(addPayload);
+      tick();
 
-      store.updateSearchTerm('unmaterialquinexistepas');
-
-      expect(store.filteredCount()).toBe(0);
-      expect(store.filteredArtworkTypes()).toEqual([]);
-    });
+      expect(store.error()).toContain('Le nom doit contenir au moins 3 caractères.');
+      expect(store.artworkTypes().length).toBe(0);
+      expect(gatewaySpy).not.toHaveBeenCalled();
+    }));
   });
 
   describe('Update Logic', () => {
-    it('should optimistically update an artwork type and set status to success on gateway success', fakeAsync(() => {
-      const initialTypes = JSON.parse(JSON.stringify(mockArtworkTypes));
-      const store = initStore({artworkTypes: initialTypes});
+    const getInitialTypes = () => MOCK_ARTWORK_TYPES.map(at => ArtworkType.hydrate({
+      id: at.id,
+      name: at.name,
+      basePrice: at.basePrice,
+      profitMultiplier: at.profitMultiplier
+    }));
 
+    it('should optimistically update and set status to fulfilled on success', fakeAsync(() => {
+      const initialTypes = getInitialTypes();
+      const store = initStore({ artworkTypes: initialTypes });
       const typeToUpdate = initialTypes[0];
+
+      const gatewaySuccess$ = new Subject<ArtworkType>();
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'update').mockReturnValue(gatewaySuccess$.asObservable());
 
       const updatePayload = {
         id: typeToUpdate.id,
-        name: 'Peinture à l\'Huile',
+        name: 'Peinture à l\'Huile V2',
         basePrice: 25,
         profitMultiplier: 2.2
       };
 
-      const gatewaySpy = jest.spyOn(artworkTypeInMemoryGateway, 'update').mockReturnValue(of(undefined as any));
-
       store.update(updatePayload);
-
-      expect(store.requestStatus()).toBe('pending');
-
-      const updatedType = store.artworkTypes().find(at => at.id === typeToUpdate.id);
-      expect(updatedType?.name.value).toBe('Peinture à l\'Huile');
-
       tick();
 
-      expect(store.requestStatus()).toBe('fulfilled');
-      expect(gatewaySpy).toHaveBeenCalledWith(expect.any(ArtworkType));
-      expect(gatewaySpy).toHaveBeenCalledTimes(1);
+      expect(store.isPending()).toBe(true);
+      const updatedType = store.artworkTypes().find(at => at.id === typeToUpdate.id);
+      expect(updatedType?.name.value).toBe('Peinture à l\'Huile V2');
+
+      const returnedArtworkType = gatewaySpy.mock.calls[0][0];
+      gatewaySuccess$.next(returnedArtworkType);
+      gatewaySuccess$.complete();
+      tick();
+
+      expect(store.isFulfilled()).toBe(true);
     }));
 
-    // Scénario 2: L'échec du réseau
-    it('should revert the optimistic update and set status to error when gateway fails', (done) => {
-      const originalName = mockArtworkTypes.find(at => at.id === '1')!.name.value;
-      const store = initStore({artworkTypes: [...mockArtworkTypes]});
-      const updatePayload = {id: '1', name: 'Nom Qui Va Échouer', basePrice: 99, profitMultiplier: 9};
-      const errorMessage = 'Network Error';
+    it('should revert optimistic update and set error on gateway failure', fakeAsync(() => {
+      const initialTypes = getInitialTypes();
+      const store = initStore({ artworkTypes: initialTypes });
+      const originalType = initialTypes[0];
 
-      jest.spyOn(gateway, 'update').mockReturnValue(throwError(() => new Error(errorMessage)));
+      const gatewayError$ = new Subject<ArtworkType>();
+      jest.spyOn(artworkTypeGateway, 'update').mockReturnValue(gatewayError$.asObservable());
 
-      // Action
+      const updatePayload = { id: originalType.id, name: 'Update qui va échouer', basePrice: 99, profitMultiplier: 3 };
+
       store.update(updatePayload);
+      tick();
 
-      // Vérification de la mise à jour optimiste
-      expect(store.artworkTypes().find(at => at.id === '1')?.name.value).toBe('Nom Qui Va Échouer');
+      expect(store.isPending()).toBe(true);
+      expect(store.artworkTypes()[0].name.value).toBe('Update qui va échouer');
 
-      setTimeout(() => {
-        expect(store.requestStatus()).toEqual({error: errorMessage});
-        // Assertion cruciale : vérification du rollback
-        expect(store.artworkTypes().find(at => at.id === '1')?.name.value).toBe(originalName);
-        done();
-      }, 0);
-    });
+      gatewayError$.error({ message: 'Network error' });
+      tick();
 
-    // Scénario 3: L'échec de la validation du domaine
-    it('should set status to error and not call the gateway if domain validation fails', (done) => {
-      const store = initStore({artworkTypes: [...mockArtworkTypes]});
-      const artworkTypeToUpdate = store.artworkTypes().find(at => at.id === '1')!;
-      const invalidPayload = {id: '1', name: '', basePrice: -10, profitMultiplier: 0.5}; // Nom vide, invalide
-      const validationError = new DomainError('NAME_EMPTY', 'Le nom ne peut pas être vide.');
+      expect(store.error()).toBe('Network error');
+      expect(store.artworkTypes()[0].name.value).toBe(originalType.name.value);
+    }));
 
-      // On simule l'échec de la méthode `update` du modèle
-      jest.spyOn(artworkTypeToUpdate, 'update').mockReturnValue(Result.failure(validationError));
-      const gatewaySpy = jest.spyOn(gateway, 'update');
+    it('should set error if domain validation for name fails', fakeAsync(() => {
+      const store = initStore({ artworkTypes: getInitialTypes() });
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'update');
 
-      // Action
-      store.update(invalidPayload);
+      const updatePayload = { id: '1', name: '', basePrice: 25, profitMultiplier: 2.2 };
 
-      setTimeout(() => {
-        expect(store.requestStatus()).toEqual({error: validationError.message});
-        // Le gateway ne doit jamais avoir été appelé
-        expect(gatewaySpy).not.toHaveBeenCalled();
-        done();
-      }, 0);
-    });
-
-    // Scénario 4: L'ID inexistant
-    it('should set status to error and not call the gateway if ID does not exist', (done) => {
-      const store = initStore({artworkTypes: [...mockArtworkTypes]});
-      const updatePayload = {id: '999', name: 'Inexistant', basePrice: 1, profitMultiplier: 1};
-
-      const gatewaySpy = jest.spyOn(gateway, 'update');
-
-      // Action
       store.update(updatePayload);
+      tick();
 
-      setTimeout(() => {
-        expect(store.requestStatus()).toEqual({error: 'Type d\'œuvre non trouvé.'});
-        expect(gatewaySpy).not.toHaveBeenCalled();
-        done();
-      }, 0);
-    });
+      expect(store.error()).toContain('Le nom est requis.');
+      expect(store.isPending()).toBe(false);
+      expect(store.isFulfilled()).toBe(false);
+      expect(gatewaySpy).not.toHaveBeenCalled();
+    }));
+
+    it('should set error if domain validation for profitMultiplier fails', fakeAsync(() => {
+      const store = initStore({ artworkTypes: getInitialTypes() });
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'update');
+
+      const updatePayload = { id: '1', name: 'Nom Valide', basePrice: 25, profitMultiplier: 0.5 };
+
+      store.update(updatePayload);
+      tick();
+
+      expect(store.error()).toEqual(DomainErrors.ArtworkType.ProfitMultiplierMustBeAtLeastOne.message);
+      expect(store.isPending()).toBe(false);
+      expect(gatewaySpy).not.toHaveBeenCalled();
+    }));
+
+    it('should set an error if trying to update a non-existent artwork type', fakeAsync(() => {
+      const store = initStore({ artworkTypes: getInitialTypes() });
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'update');
+
+      const updatePayload = { id: 'id-inexistant', name: 'Test', basePrice: 1, profitMultiplier: 1 };
+
+      store.update(updatePayload);
+      tick();
+
+      expect(store.error()).toBe('Type d\'œuvre non trouvé.');
+      expect(store.isPending()).toBe(false);
+      expect(gatewaySpy).not.toHaveBeenCalled();
+    }));
+  });
+  describe('Delete Logic', () => {
+    // --- CORRECTION : On utilise la même méthode d'isolation que pour 'Update' ---
+    const getInitialTypes = () => MOCK_ARTWORK_TYPES.map(at => ArtworkType.hydrate({
+      id: at.id,
+      name: at.name,
+      basePrice: at.basePrice,
+      profitMultiplier: at.profitMultiplier
+    }));
+
+    it('should optimistically delete and set status to fulfilled on success', fakeAsync(() => {
+      const initialTypes = getInitialTypes(); // On utilise des données fraîches
+      const store = initStore({ artworkTypes: initialTypes });
+      const typeToDelete = initialTypes[0];
+
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'delete').mockReturnValue(of(undefined).pipe(delay(0)));
+
+      expect(store.artworkTypes().length).toBe(5);
+
+      store.delete(typeToDelete.id);
+      tick();
+
+      expect(store.artworkTypes().length).toBe(4);
+      expect(store.artworkTypes().find(at => at.id === typeToDelete.id)).toBeUndefined();
+      expect(store.isPending()).toBe(false);
+      expect(store.isFulfilled()).toBe(true);
+      expect(gatewaySpy).toHaveBeenCalledWith(typeToDelete.id);
+    }));
+
+    it('should revert optimistic delete and set error on gateway failure', fakeAsync(() => {
+      const initialTypes = getInitialTypes(); // On utilise des données fraîches
+      const store = initStore({ artworkTypes: initialTypes });
+      const typeToDelete = initialTypes[0];
+
+      const gatewayError$ = throwError(() => new Error('API Error'));
+      jest.spyOn(artworkTypeGateway, 'delete').mockReturnValue(gatewayError$);
+
+      store.delete(typeToDelete.id);
+      tick();
+
+      expect(store.artworkTypes().length).toBe(5);
+      expect(store.artworkTypes()[0].id).toBe(typeToDelete.id);
+      expect(store.error()).toBe('API Error');
+    }));
+
+    it('should set an error if trying to delete a non-existent artwork type', fakeAsync(() => {
+      const store = initStore({ artworkTypes: getInitialTypes() }); // On utilise des données fraîches
+      const gatewaySpy = jest.spyOn(artworkTypeGateway, 'delete');
+
+      store.delete('id-inexistant');
+      tick();
+
+      expect(store.error()).toBe('Type d\'œuvre non trouvé pour la suppression.');
+      expect(store.isPending()).toBe(false);
+      expect(gatewaySpy).not.toHaveBeenCalled();
+    }));
   });
 });

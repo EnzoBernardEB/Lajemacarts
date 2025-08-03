@@ -68,7 +68,33 @@ export const ArtworkTypeStore = signalStore(
         )),
       ),
     ),
+    add: rxMethod<{ name: string; basePrice: number; profitMultiplier: number }>(
+      pipe(
+        tap(() => patchState(store, setPending())),
+        switchMap((payload) => {
+          const createResult = ArtworkType.create(payload);
 
+          if (createResult.isFailure) {
+            patchState(store, setError(createResult.error!.message));
+            return EMPTY;
+          }
+
+          const newArtworkType = createResult.getValue();
+
+          return artworkTypeGateway.add(newArtworkType).pipe(
+            tap((createdArtworkType) => {
+              patchState(store, {
+                artworkTypes: [...store.artworkTypes(), createdArtworkType]
+              }, setFulfilled());
+            }),
+            catchError((error) => {
+              patchState(store, setError(error.message || 'Add Failed'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
     update: rxMethod<{ id: string; name: string; basePrice: number; profitMultiplier: number }>(
       pipe(
         tap(() => {
@@ -100,6 +126,39 @@ export const ArtworkTypeStore = signalStore(
                 patchState(store, {artworkTypes: snapshot});
               }
               patchState(store, setError(error.message || 'Update Failed'));
+              return EMPTY;
+            })
+          );
+        })
+      )
+    ),
+    delete: rxMethod<string>(
+      pipe(
+        tap(() => {
+          patchState(store, setPending());
+          store.takeSnapshot();
+        }),
+        switchMap((id) => {
+          const artworkTypes = store.artworkTypes();
+          const artworkTypeExists = artworkTypes.some(at => at.id === id);
+
+          if (!artworkTypeExists) {
+            patchState(store, setError('Type d\'œuvre non trouvé pour la suppression.'));
+            return EMPTY;
+          }
+
+          patchState(store, {
+            artworkTypes: artworkTypes.filter(at => at.id !== id)
+          });
+
+          return artworkTypeGateway.delete(id).pipe(
+            tap(() => patchState(store, setFulfilled())),
+            catchError((error) => {
+              const snapshot = store.snapshot();
+              if (snapshot) {
+                patchState(store, { artworkTypes: snapshot });
+              }
+              patchState(store, setError(error.message || 'Delete Failed'));
               return EMPTY;
             })
           );

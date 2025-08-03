@@ -1,6 +1,19 @@
 export type ArtworkStatus = 'Draft' | 'InStock' | 'Sold' | 'Archived';
 
 
-export type WeightCategory = 'LessThan1kg' | 'Between1And5kg' | 'MoreThan5kg';
+export const DimensionUnit = {
+  Centimeters: 'cm',
+  Inches: 'in',
+} as const;
 
-export type DimensionUnit = 'cm' | 'in';
+export const WeightCategory = {
+  Light: 'LessThan1kg',
+  Medium: 'Between1And5kg',
+  Heavy: 'MoreThan5kg',
+} as const;
+
+type DimensionUnitObject = typeof DimensionUnit;
+export type DimensionUnit = DimensionUnitObject[keyof DimensionUnitObject];
+
+type WeightCategoryObject = typeof WeightCategory;
+export type WeightCategory = WeightCategoryObject[keyof WeightCategoryObject];

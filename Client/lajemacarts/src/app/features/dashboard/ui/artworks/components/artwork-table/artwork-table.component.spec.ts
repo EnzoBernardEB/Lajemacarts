@@ -33,8 +33,11 @@ describe('ArtworksTableComponent', () => {
       status: 'InStock',
       statusLabel: 'En Stock',
       statusClass: 'status-instock',
-      price: 150,
-      formattedPrice: '150,00 €',
+      sellingPrice: 150,
+      formattedSellingPrice: '150,00 €',
+      calculatedPrice: 140,
+      formattedCalculatedPrice: '~ 140,00 €',
+      priceComparisonStatus: 'higher',
       compactDimensions: '15x15x30 cm',
       originalData: {} as EnrichedArtwork,
     },
@@ -47,13 +50,15 @@ describe('ArtworksTableComponent', () => {
       status: 'Sold',
       statusLabel: 'Vendu',
       statusClass: 'status-sold',
-      price: 1200,
-      formattedPrice: '1 200,00 €',
+      sellingPrice: 1200,
+      formattedSellingPrice: '1 200,00 €',
+      calculatedPrice: 1350,
+      formattedCalculatedPrice: '~ 1 350,00 €',
+      priceComparisonStatus: 'lower',
       compactDimensions: '120x60x45 cm',
       originalData: {} as EnrichedArtwork,
     },
   ];
-
   const renderComponent = async (artworks: ArtworkListViewModel[] = MOCK_ARTWORKS) => {
     fixture = TestBed.createComponent(TestHostComponent);
     fixture.componentRef.setInput('artworks', artworks);
@@ -87,7 +92,7 @@ describe('ArtworksTableComponent', () => {
       expect(cellTexts[2]).toBe('Vase');
       expect(cellTexts[3]).toBe('2023');
       expect(cellTexts[5]).toBe('En Stock');
-      expect(cellTexts[6]).toBe('150,00 €');
+      expect(cellTexts[6]).toBe('~ 140,00 €');
     });
   });
 

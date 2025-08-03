@@ -1,13 +1,18 @@
-import {ChangeDetectionStrategy, Component, computed, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, Injector} from '@angular/core';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {ArtworksEmptyStateComponent} from '../../../../shared/components/empty-state/empty-state.component';
 import {MaterialStore} from '../../application/store/material/material.store';
 import {MaterialsTableComponent} from '../materials/components/material-table/material-table.component';
-import {MaterialMapper} from '../mappers/material.mapper';
+import {MaterialListViewModel, MaterialMapper} from '../mappers/material.mapper';
 import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
+import {MaterialFormComponent} from './components/form/material-form';
+import {filter, take} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {toObservable} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'lajemacarts-material-page',
@@ -57,7 +62,10 @@ import {SearchTextFilterComponent} from '../components/filter/search-text-filter
               (buttonClick)="onAddMaterial()"/>
           }
         } @else {
-          <lajemacarts-materials-table [materials]="listViewModels()"/>
+          <lajemacarts-materials-table
+            [materials]="listViewModels()"
+            (editMaterial)="onEditMaterial($event)"
+            (deleteMaterial)="onDeleteMaterial($event)"/>
           <div class="results-info">
             <p>
               Affichage de {{ store.filteredCount() }} sur {{ store.totalMaterials() }} matériaux
@@ -85,6 +93,9 @@ import {SearchTextFilterComponent} from '../components/filter/search-text-filter
 })
 export class MaterialsPage {
   protected readonly store = inject(MaterialStore);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly injector = inject(Injector);
 
   protected readonly listViewModels = computed(() =>
     MaterialMapper.toListViewModels(this.store.filteredMaterials())
@@ -98,7 +109,55 @@ export class MaterialsPage {
     this.store.loadAll();
   }
 
-  protected onAddMaterial(): void {
-    console.log('Navigate to add artwork');
+  onAddMaterial(): void {
+    const dialogRef = this.dialog.open(MaterialFormComponent, { width: '800px' });
+    this.handleDialogClose(dialogRef, 'add');
+  }
+
+  onEditMaterial(material: MaterialListViewModel): void {
+    const materialToEdit = this.store.materials().find(m => m.id === material.id);
+
+    if (materialToEdit) {
+      const dialogRef = this.dialog.open(MaterialFormComponent, {
+        width: '500px',
+        data: {
+          ...MaterialMapper.toListViewModel(materialToEdit),
+          pricePerUnit: materialToEdit.pricePerUnit.amount
+        }
+      });
+      this.handleDialogClose(dialogRef, 'update', material.id);
+    }
+  }
+
+  onDeleteMaterial(material: MaterialListViewModel): void {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer "${material.name}" ?`)) {
+      this.store.delete(material.id);
+      this.observeRequestStatus('Suppression');
+    }
+  }
+
+  private handleDialogClose(dialogRef: any, type: 'add' | 'update', id?: string): void {
+    dialogRef.afterClosed().pipe(filter(result => !!result)).subscribe((result: any) => {
+      if (type === 'add') {
+        this.store.add(result);
+        this.observeRequestStatus('Ajout');
+      } else if (type === 'update' && id) {
+        this.store.update({ id, ...result });
+        this.observeRequestStatus('Mise à jour');
+      }
+    });
+  }
+
+  private observeRequestStatus(action: 'Ajout' | 'Mise à jour' | 'Suppression'): void {
+    toObservable(this.store.requestStatus, { injector: this.injector }).pipe(
+      filter(status => status === 'fulfilled' || typeof status === 'object'),
+      take(1)
+    ).subscribe(finalStatus => {
+      if (finalStatus === 'fulfilled') {
+        this.snackBar.open(`${action} réussie !`, 'OK', { duration: 3000 });
+      } else {
+        this.snackBar.open(`Échec de l'action : ${this.store.error()}`, 'Fermer', { duration: 5000 });
+      }
+    });
   }
 }

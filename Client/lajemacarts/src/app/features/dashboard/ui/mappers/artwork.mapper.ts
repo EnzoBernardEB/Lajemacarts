@@ -2,16 +2,10 @@ import {EnrichedArtwork} from '../../application/store/artwork/artwork.store';
 import {ArtworkType} from '../../domain/models/artwork-type';
 import {Dimensions} from '../../domain/models/value-objects/dimensions.model';
 import {Material} from '../../domain/models/material';
-import {ArtworkStatus} from '../../domain/models/enums/enums';
+import {ArtworkStatus, WeightCategory} from '../../domain/models/enums/enums';
+import {Artwork} from '../../domain/models/artwork';
 
-/**
- * Mapper pour transformer les modèles du domaine Artwork en ViewModels pour la couche UI.
- * Cette classe est le pont entre la logique métier riche et les données plates et simples
- * nécessaires à l'affichage.
- */
 export class ArtworkMapper {
-
-  // --- MÉTHODES DE MAPPING PRINCIPALES ---
 
   static toListViewModels(enrichedArtworks: EnrichedArtwork[]): ArtworkListViewModel[] {
     return enrichedArtworks.map(enriched => this.toListViewModel(enriched));
@@ -90,8 +84,6 @@ export class ArtworkMapper {
     };
   }
 
-  // --- MÉTHODES UTILITAIRES PUBLIQUES ---
-
   static toFilterOptions(artworkTypes: ArtworkType[]): ArtworkTypeOption[] {
     return artworkTypes.map(type => ({
       id: type.id,
@@ -103,7 +95,8 @@ export class ArtworkMapper {
     return [
       {id: 'Draft', label: 'Brouillon', icon: 'edit'},
       {id: 'InStock', label: 'En Stock', icon: 'inventory'},
-      {id: 'Sold', label: 'Vendu', icon: 'check_circle'}
+      {id: 'Sold', label: 'Vendu', icon: 'check_circle'},
+      {id: 'Archived', label: 'Archivé', icon: 'archive'}
     ];
   }
 
@@ -120,15 +113,22 @@ export class ArtworkMapper {
     };
   }
 
-  // --- MÉTHODES PRIVÉES DE LOGIQUE INTERNE ---
-
   private static calculateReferencePrice(enriched: EnrichedArtwork): number {
-    const {artwork, artworkType, artworkMaterials} = enriched;
+    const { artwork, artworkType, artworkMaterials } = enriched;
+
     if (!artworkType || artworkMaterials.length === 0) {
       return 0;
     }
-    // Appel à la logique du domaine
-    return artwork.calculatePrice(artworkType, artworkMaterials).amount;
+
+
+    const calculatedPrice = Artwork.calculatePrice(
+      artworkType,
+      artworkMaterials,
+      artwork.materials,
+      artwork.hoursSpent
+    );
+
+    return calculatedPrice.amount;
   }
 
   private static getComparisonStatus(sellingPrice: number, calculatedPrice: number): 'lower' | 'higher' | 'equal' {
@@ -137,7 +137,6 @@ export class ArtworkMapper {
     return 'equal';
   }
 
-  // ... Fonctions de formatage
   private static formatPrice(amount: number): string {
     return new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(amount);
   }
@@ -194,9 +193,14 @@ export class ArtworkMapper {
   private static generateSeoDescription(enriched: EnrichedArtwork): string {
     return `${enriched.artwork.name.value}, œuvre de type ${enriched.artworkType?.name.value ?? 'inconnu'} créée en ${enriched.artwork.creationYear}. ${enriched.artwork.description.value.substring(0, 100)}...`;
   }
+  static getWeightCategoryOptions(): WeightCategoryOption[] {
+    return [
+      { id: 'LessThan1kg', label: 'Léger (< 1kg)' },
+      { id: 'Between1And5kg', label: 'Moyen (1 à 5kg)' },
+      { id: 'MoreThan5kg', label: 'Lourd (> 5kg)' },
+    ];
+  }
 }
-
-// --- INTERFACES DES VIEWMODELS ---
 
 interface BaseArtworkViewModel {
   readonly id: string;
@@ -244,9 +248,10 @@ export interface ArtworkDetailViewModel extends BaseArtworkViewModel {
   readonly materials: string;
   readonly imageUrls: { thumbnail: string; medium: string; large: string; };
 }
-
-// --- INTERFACES DES OPTIONS ET STATISTIQUES ---
-
+export interface WeightCategoryOption {
+  readonly id: WeightCategory;
+  readonly label: string;
+}
 export interface ArtworkTypeOption {
   readonly id: string;
   readonly name: string;

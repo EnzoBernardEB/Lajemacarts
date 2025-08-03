@@ -84,6 +84,9 @@ importers:
       angular-eslint:
         specifier: 20.1.1
         version: 20.1.1(chokidar@4.0.3)(eslint@9.32.0(jiti@2.4.2))(typescript-eslint@8.34.1(eslint@9.32.0(jiti@2.4.2))(typescript@5.8.3))(typescript@5.8.3)
+      core-js:
+        specifier: ^3.44.0
+        version: 3.44.0
       eslint:
         specifier: ^9.32.0
         version: 9.32.0(jiti@2.4.2)
@@ -2423,6 +2426,9 @@ packages:
 
   copy-anything@2.0.6:
     resolution: {integrity: sha512-1j20GZTsvKNkc4BY3NpMOM8tt///wY3FpIzozTOFO2ffuZcV61nojHXVKIy3WM+7ADCy5FVhdZYHYDdgTU0yJw==}
+
+  core-js@3.44.0:
+    resolution: {integrity: sha512-aFCtd4l6GvAXwVEh3XbbVqJGHDJt0OZRa+5ePGx3LLwi12WfexqQxcsohb2wgsa/92xtl19Hd66G/L+TaAxDMw==}
 
   cors@2.8.5:
     resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
@@ -7464,6 +7470,8 @@ snapshots:
     dependencies:
       is-what: 3.14.1
     optional: true
+
+  core-js@3.44.0: {}
 
   cors@2.8.5:
     dependencies:

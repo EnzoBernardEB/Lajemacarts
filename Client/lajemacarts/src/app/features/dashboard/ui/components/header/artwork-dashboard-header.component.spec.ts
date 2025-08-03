@@ -2,14 +2,14 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {By} from '@angular/platform-browser';
-import {ArtworksHeaderComponent} from './artwork-dashboard-header.component';
+import {PageHeaderComponent} from './artwork-dashboard-header.component';
 
 describe('ArtworksHeaderComponent', () => {
-  let component: ArtworksHeaderComponent;
-  let fixture: ComponentFixture<ArtworksHeaderComponent>;
+  let component: PageHeaderComponent;
+  let fixture: ComponentFixture<PageHeaderComponent>;
 
   const renderComponent = (): void => {
-    fixture = TestBed.createComponent(ArtworksHeaderComponent);
+    fixture = TestBed.createComponent(PageHeaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   };
@@ -22,7 +22,7 @@ describe('ArtworksHeaderComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        ArtworksHeaderComponent,
+        PageHeaderComponent,
         MatButtonModule,
         MatIconModule,
       ]

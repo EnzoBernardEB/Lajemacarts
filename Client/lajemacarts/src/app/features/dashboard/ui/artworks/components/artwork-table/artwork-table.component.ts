@@ -7,7 +7,7 @@ import {MatChipsModule} from '@angular/material/chips';
 import {MatDivider} from '@angular/material/divider';
 
 import {NgClass, NgOptimizedImage} from '@angular/common';
-import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Utilise le bon type
+import {ArtworkListViewModel} from '../../../mappers/artwork.mapper';
 
 @Component({
   selector: 'lajemacarts-artworks-table',

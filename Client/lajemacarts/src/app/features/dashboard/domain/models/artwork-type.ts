@@ -30,7 +30,9 @@ export class ArtworkType {
   }): Result<ArtworkType> {
     const nameResult = Name.create(props.name);
     const basePriceResult = Money.create(props.basePrice);
-
+    if (props.profitMultiplier < 1) {
+      return Result.failure<ArtworkType>(DomainErrors.ArtworkType.ProfitMultiplierMustBeAtLeastOne);
+    }
     const combinedResult = Result.combine([
       nameResult,
       basePriceResult,

@@ -9,7 +9,6 @@ import {MatButtonModule} from '@angular/material/button';
 
 @Component({
   selector: 'lajemacarts-text-search-filter',
-  standalone: true,
   imports: [
     MatFormFieldModule,
     MatInputModule,

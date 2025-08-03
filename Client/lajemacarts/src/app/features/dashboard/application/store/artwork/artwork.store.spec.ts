@@ -1,4 +1,4 @@
-import {ArtworkStore} from './artwork.store';
+import {ArtworkStore, UpdateArtworkPayload} from './artwork.store';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
@@ -9,7 +9,7 @@ import {fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {patchState, StateSignals} from '@ngrx/signals';
 import {unprotected} from '@ngrx/signals/testing';
 import {mockArtworks, mockArtworkTypes, mockMaterials} from './artwork.store.data';
-import {of, throwError} from 'rxjs';
+import {delay, of, throwError} from 'rxjs';
 import {Artwork} from '../../../domain/models/artwork';
 
 function initStore(partial?: StateSignals<typeof ArtworkStore>) {
@@ -125,96 +125,151 @@ describe('ArtworkStore', () => {
   });
 
   describe('Write Operations', () => {
+    const getFreshMocks = () => [...mockArtworks];
+
     describe('addArtwork', () => {
       it('should add the new artwork to the state on success', fakeAsync(() => {
         const store = initStore();
-        const newArtwork = mockArtworks[0];
-        const addSpy = jest.spyOn(artworkGateway, 'add').mockReturnValue(of(newArtwork));
+        const artworkToAdd = mockArtworks[0];
 
-        store.addArtwork(newArtwork);
+        const payload = {
+          name: artworkToAdd.name.value,
+          description: artworkToAdd.description.value,
+          artworkTypeId: artworkToAdd.artworkTypeId,
+          materials: artworkToAdd.materials,
+          dimL: artworkToAdd.dimensions.length,
+          dimW: artworkToAdd.dimensions.width,
+          dimH: artworkToAdd.dimensions.height,
+          dimUnit: artworkToAdd.dimensions.unit,
+          weightCategory: artworkToAdd.weightCategory,
+          hoursSpent: artworkToAdd.hoursSpent,
+          creationYear: artworkToAdd.creationYear,
+          sellingPrice: artworkToAdd.sellingPrice.amount
+        };
+
+        jest.spyOn(artworkGateway, 'add').mockImplementation(artwork => of(artwork));
+
+        store.addArtwork(payload);
         tick();
 
-        expect(addSpy).toHaveBeenCalledWith(newArtwork);
         expect(store.artworks()).toHaveLength(1);
-        expect(store.artworks()[0]).toEqual(newArtwork);
+        expect(store.artworks()[0].name.value).toEqual(payload.name);
         expect(store.isFulfilled()).toBe(true);
       }));
 
-      it('should set an error state on failure', fakeAsync(() => {
+      it('should set an error if domain validation fails', fakeAsync(() => {
         const store = initStore();
-        const newArtwork = mockArtworks[0];
-        const error = new Error('Gateway failure');
-        const addSpy = jest.spyOn(artworkGateway, 'add').mockReturnValue(throwError(() => error));
+        const artworkToAdd = mockArtworks[0];
+        const payload = {
+          ...artworkToAdd,
+          name: 'A',
+          description: artworkToAdd.description.value,
+          dimL: artworkToAdd.dimensions.length,
+          dimW: artworkToAdd.dimensions.width,
+          dimH: artworkToAdd.dimensions.height,
+          dimUnit: artworkToAdd.dimensions.unit,
+          sellingPrice: artworkToAdd.sellingPrice.amount
+        };
+        const addSpy = jest.spyOn(artworkGateway, 'add');
 
-        store.addArtwork(newArtwork);
+        store.addArtwork(payload);
         tick();
 
-        expect(addSpy).toHaveBeenCalled();
-        expect(store.artworks()).toHaveLength(0)
-        expect(store.error()).toBe('Échec de l\'ajout de l\'œuvre');
+        expect(store.artworks()).toHaveLength(0);
+        expect(store.error()).toContain('Le nom doit contenir au moins 3 caractères.');
+        expect(addSpy).not.toHaveBeenCalled();
       }));
     });
 
     describe('updateArtwork', () => {
-      it('should update the artwork in the state on success', fakeAsync(() => {
-        const store = initStore({artworks: [mockArtworks[0]]});
-        const updatedArtwork = Artwork.hydrate({
-          ...mockArtworks[0],
-          name: {value: 'Updated Name'}
-        });
-        const updateSpy = jest.spyOn(artworkGateway, 'update').mockReturnValue(of(updatedArtwork));
+      it('should optimistically update and set fulfilled on success', fakeAsync(() => {
+        const store = initStore({ artworks: getFreshMocks() });
+        const artworkToUpdate = store.artworks()[0];
+        const payload: UpdateArtworkPayload = {
+          id: artworkToUpdate.id,
+          name: 'Updated Name',
+          status: 'InStock',
+          description: artworkToUpdate.description.value,
+          artworkTypeId: artworkToUpdate.artworkTypeId,
+          materials: artworkToUpdate.materials,
+          dimL: artworkToUpdate.dimensions.length,
+          dimW: artworkToUpdate.dimensions.width,
+          dimH: artworkToUpdate.dimensions.height,
+          dimUnit: artworkToUpdate.dimensions.unit,
+          weightCategory: artworkToUpdate.weightCategory,
+          hoursSpent: artworkToUpdate.hoursSpent,
+          creationYear: artworkToUpdate.creationYear,
+          sellingPrice: artworkToUpdate.sellingPrice.amount
+        };
+        jest.spyOn(artworkGateway, 'update').mockImplementation(artworkType => of(artworkType).pipe(delay(0)));
 
-        store.updateArtwork(updatedArtwork);
+        store.updateArtwork(payload);
+
+        expect(store.artworks()[0].name.value).toBe('Updated Name');
+        expect(store.isPending()).toBe(true);
+
         tick();
 
-        expect(updateSpy).toHaveBeenCalledWith(updatedArtwork);
-        expect(store.artworks()[0].name.value).toBe('Updated Name');
         expect(store.isFulfilled()).toBe(true);
       }));
 
-      it('should set an error state on failure and not update the artwork', fakeAsync(() => {
-        const originalArtwork = mockArtworks[0];
-        const store = initStore({artworks: [originalArtwork]});
-        const updatedArtwork = Artwork.hydrate({
-          ...originalArtwork,
-          name: {value: 'Updated Name That Fails'}
-        });
-        const error = new Error('Update failed');
-        jest.spyOn(artworkGateway, 'update').mockReturnValue(throwError(() => error));
+      it('should revert optimistic update and set error on gateway failure', fakeAsync(() => {
+        const store = initStore({ artworks: getFreshMocks() });
+        const originalName = store.artworks()[0].name.value;
+        const artworkToUpdate = store.artworks()[0];
+        const payload: UpdateArtworkPayload = {
+          id: artworkToUpdate.id,
+          name: 'Update That Fails',
+          status: 'InStock',
+          description: artworkToUpdate.description.value,
+          artworkTypeId: artworkToUpdate.artworkTypeId,
+          materials: artworkToUpdate.materials,
+          dimL: artworkToUpdate.dimensions.length,
+          dimW: artworkToUpdate.dimensions.width,
+          dimH: artworkToUpdate.dimensions.height,
+          dimUnit: artworkToUpdate.dimensions.unit,
+          weightCategory: artworkToUpdate.weightCategory,
+          hoursSpent: artworkToUpdate.hoursSpent,
+          creationYear: artworkToUpdate.creationYear,
+          sellingPrice: artworkToUpdate.sellingPrice.amount
+        };
+        jest.spyOn(artworkGateway, 'update').mockReturnValue(throwError(() => new Error('API Error')));
 
-        store.updateArtwork(updatedArtwork);
+        store.updateArtwork(payload);
         tick();
 
-        expect(store.artworks()[0].name.value).toBe(originalArtwork.name.value);
-        expect(store.error()).toBe('Échec de la mise à jour de l\'œuvre');
+        expect(store.artworks()[0].name.value).toBe(originalName);
+        expect(store.error()).toBe('Échec de la mise à jour');
       }));
     });
-    describe('deleteArtwork', () => {
-      it('should remove the artwork from the state on success', fakeAsync(() => {
-        const artworkToDelete = mockArtworks[0];
-        const store = initStore({artworks: mockArtworks});
-        const deleteSpy = jest.spyOn(artworkGateway, 'delete').mockReturnValue(of(undefined));
 
-        store.deleteArtwork(artworkToDelete.id);
+    describe('deleteArtwork', () => {
+      it('should optimistically delete and set fulfilled on success', fakeAsync(() => {
+        const store = initStore({ artworks: getFreshMocks() });
+        const idToDelete = store.artworks()[0].id;
+        jest.spyOn(artworkGateway, 'delete').mockReturnValue(of(undefined).pipe(delay(0)));
+
+        store.deleteArtwork(idToDelete);
+
+        expect(store.artworks().length).toBe(mockArtworks.length - 1);
+        expect(store.isPending()).toBe(true);
+
         tick();
 
-        expect(deleteSpy).toHaveBeenCalledWith(artworkToDelete.id);
-        expect(store.artworks()).toHaveLength(mockArtworks.length - 1);
-        expect(store.artworks().find(a => a.id === artworkToDelete.id)).toBeUndefined();
+        expect(store.artworks().find(a => a.id === idToDelete)).toBeUndefined();
         expect(store.isFulfilled()).toBe(true);
       }));
 
-      it('should set an error state on failure and not remove the artwork', fakeAsync(() => {
-        const artworkToDelete = mockArtworks[0];
-        const store = initStore({artworks: mockArtworks});
-        const error = new Error('Delete failed');
-        jest.spyOn(artworkGateway, 'delete').mockReturnValue(throwError(() => error));
+      it('should revert optimistic delete and set error on gateway failure', fakeAsync(() => {
+        const store = initStore({ artworks: getFreshMocks() });
+        const idToDelete = store.artworks()[0].id;
+        jest.spyOn(artworkGateway, 'delete').mockReturnValue(throwError(() => new Error('API Error')));
 
-        store.deleteArtwork(artworkToDelete.id);
+        store.deleteArtwork(idToDelete);
         tick();
 
-        expect(store.artworks()).toHaveLength(mockArtworks.length);
-        expect(store.error()).toBe('Échec de la suppression de l\'œuvre');
+        expect(store.artworks().length).toBe(mockArtworks.length);
+        expect(store.error()).toBe('Échec de la suppression');
       }));
     });
   });
@@ -237,7 +292,6 @@ describe('ArtworkStore', () => {
 
       it('should filter by a term present in the artwork type name', () => {
         const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        // "Sculpture" est dans le nom du type mais pas dans le nom/description de l'oeuvre
         store.updateSearchTerm('Sculpture');
         expect(store.filteredCount()).toBe(1);
         expect(store.filteredArtworks()[0].artwork.name.value).toContain('Envol');
@@ -245,14 +299,14 @@ describe('ArtworkStore', () => {
 
       it('should be case-insensitive', () => {
         const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('rivière'); // en minuscule
+        store.updateSearchTerm('rivière');
         expect(store.filteredCount()).toBe(1);
         expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table Basse "Rivière"');
       });
 
       it('should trim whitespace from the search term', () => {
         const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('  Rivière  '); // avec espaces
+        store.updateSearchTerm('  Rivière  ');
         expect(store.filteredCount()).toBe(1);
       });
     });
@@ -280,6 +334,7 @@ describe('ArtworkStore', () => {
           hoursSpent: 5,
           creationYear: 2024,
           status: 'InStock',
+          sellingPrice:150
         });
 
         const artworkSold = Artwork.hydrate({
@@ -293,6 +348,7 @@ describe('ArtworkStore', () => {
           hoursSpent: 20,
           creationYear: 2023,
           status: 'Sold',
+          sellingPrice:120
         });
 
         const store = initStore({
