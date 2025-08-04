@@ -75,7 +75,6 @@ describe('ArtworksEmptyStateComponent', () => {
 
       component.buttonClick.subscribe(buttonClickSpy);
 
-      // User cannot click on what doesn't exist
       expect(isButtonVisible()).toBe(false);
       expect(buttonClickSpy).not.toHaveBeenCalled();
     });

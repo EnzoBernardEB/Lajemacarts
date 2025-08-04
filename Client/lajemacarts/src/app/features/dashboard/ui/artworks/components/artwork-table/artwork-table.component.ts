@@ -6,8 +6,8 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatDivider} from '@angular/material/divider';
 
-import {NgOptimizedImage} from '@angular/common';
-import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Utilise le bon type
+import {NgClass, NgOptimizedImage} from '@angular/common';
+import {ArtworkListViewModel} from '../../../mappers/artwork.mapper';
 
 @Component({
   selector: 'lajemacarts-artworks-table',
@@ -18,7 +18,8 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
     MatMenuModule,
     MatChipsModule,
     MatDivider,
-    NgOptimizedImage
+    NgOptimizedImage,
+    NgClass
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -72,10 +73,19 @@ import {ArtworkListViewModel} from '../../../mappers/artwork.mapper'; // ✅ Uti
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="calculatedPrice">
-          <th mat-header-cell *matHeaderCellDef>Prix Calculé</th>
+        <ng-container matColumnDef="sellingPrice">
+          <th mat-header-cell *matHeaderCellDef>Prix de Vente</th>
           <td mat-cell *matCellDef="let artwork">
-            <span class="price">{{ artwork.formattedPrice }}</span>
+        <span class="price" [ngClass]="'price-' + artwork.priceComparisonStatus">
+          {{ artwork.formattedSellingPrice }}
+        </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="calculatedPrice">
+          <th mat-header-cell *matHeaderCellDef>Prix Suggéré</th>
+          <td mat-cell *matCellDef="let artwork">
+            <span class="price-reference">{{ artwork.formattedCalculatedPrice }}</span>
           </td>
         </ng-container>
 
@@ -143,6 +153,7 @@ export class ArtworksTableComponent {
     'dimensions',
     'status',
     'calculatedPrice',
+    'sellingPrice',
     'actions'
   ];
 

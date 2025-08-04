@@ -13,7 +13,7 @@ export const DASHBOARD_ROUTES: Routes = [
   },
   {
     path: 'artworks',
-    loadComponent: () => import('./ui/pages/artworks.page').then(m => m.ArtworksPage),
+    loadComponent: () => import('./ui/artworks/artworks.page').then(m => m.ArtworksPage),
     providers: [artworkGatewayProvider, materialGatewayProvider, artworkTypeGatewayProvider],
   },
   // {
@@ -28,8 +28,14 @@ export const DASHBOARD_ROUTES: Routes = [
   //   data: {isEditMode: true},
   //   providers: [artworkGatewayProvider],
   // },
-  // {
-  //   path: 'materials',
-  //   loadComponent: () => import('./ui/materials/materials.page').then(m => m.MaterialsPageComponent),
-  // }
+  {
+    path: 'materials',
+    loadComponent: () => import('./ui/materials/materials.page').then(m => m.MaterialsPage),
+    providers: [materialGatewayProvider],
+  },
+  {
+    path: 'artwork-types',
+    loadComponent: () => import('./ui/artwork-types/artwork-type.page').then(m => m.ArtworkTypesPageComponent),
+    providers: [artworkTypeGatewayProvider],
+  }
 ];

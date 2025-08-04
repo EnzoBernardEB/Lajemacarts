@@ -1,6 +1,7 @@
 import {Money} from './value-objects/money.model';
 import {Name} from './value-objects/name';
 import {Result} from '../../../../shared/core/result';
+import {DomainErrors} from '../../../../shared/domain/errors/domain-errors';
 
 interface ArtworkProps {
   id: string;
@@ -29,7 +30,9 @@ export class ArtworkType {
   }): Result<ArtworkType> {
     const nameResult = Name.create(props.name);
     const basePriceResult = Money.create(props.basePrice);
-
+    if (props.profitMultiplier < 1) {
+      return Result.failure<ArtworkType>(DomainErrors.ArtworkType.ProfitMultiplierMustBeAtLeastOne);
+    }
     const combinedResult = Result.combine([
       nameResult,
       basePriceResult,
@@ -47,6 +50,31 @@ export class ArtworkType {
     });
 
     return Result.success<ArtworkType>(artworkType);
+  }
+
+  public update(props: {
+    name: string;
+    basePrice: number;
+    profitMultiplier: number;
+  }): Result<ArtworkType> {
+    const nameResult = Name.create(props.name);
+    const basePriceResult = Money.create(props.basePrice);
+
+    if (props.profitMultiplier < 1) {
+      return Result.failure<ArtworkType>(DomainErrors.ArtworkType.ProfitMultiplierMustBeAtLeastOne);
+    }
+
+    const combinedResult = Result.combine([nameResult, basePriceResult]);
+    if (combinedResult.isFailure) {
+      return Result.failure<ArtworkType>(combinedResult.error!);
+    }
+
+    return Result.success(new ArtworkType({
+      id: this.id,
+      name: nameResult.getValue(),
+      basePrice: basePriceResult.getValue(),
+      profitMultiplier: props.profitMultiplier,
+    }));
   }
 
   public static hydrate(data: ArtworkProps): ArtworkType {

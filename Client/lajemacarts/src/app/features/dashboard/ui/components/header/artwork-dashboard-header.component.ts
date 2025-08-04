@@ -3,16 +3,16 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 
 @Component({
-  selector: 'lajemacarts-artworks-header',
+  selector: 'lajemacarts-dashboard-header',
   imports: [MatButtonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="artworks-header">
+    <header class="page-header">
       <h1 class="page-title">{{ title() }}</h1>
       <button
         mat-raised-button
         color="primary"
-        class="add-artwork-btn"
+        class="add-item-btn"
         (click)="addClicked.emit()">
         <mat-icon>add</mat-icon>
         {{ addButtonText() }}
@@ -20,7 +20,7 @@ import {MatIconModule} from '@angular/material/icon';
     </header>
   `,
   styles: `
-    .artworks-header {
+    .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -36,7 +36,7 @@ import {MatIconModule} from '@angular/material/icon';
     .page-title {
       font-size: 1.5rem;
       font-weight: 600;
-      color: var(--color-text-light);
+      color: var(--text-primary);
       margin: 0;
 
       @media (min-width: 768px) {
@@ -52,15 +52,15 @@ import {MatIconModule} from '@angular/material/icon';
       }
     }
 
-    .add-artwork-btn {
+    .add-item-btn {
       @media (max-width: 768px) {
         width: 100%;
       }
     }
   `
 })
-export class ArtworksHeaderComponent {
-  title = input<string>('Mes Œuvres');
-  addButtonText = input<string>('Ajouter une Œuvre');
+export class PageHeaderComponent {
+  title = input<string>('Titre de la Page');
+  addButtonText = input<string>('Ajouter');
   addClicked = output<void>();
 }

@@ -2,6 +2,7 @@ import {Money} from './value-objects/money.model';
 import {Name} from './value-objects/name';
 import {Result} from '../../../../shared/core/result';
 import {DomainErrors} from '../../../../shared/domain/errors/domain-errors';
+import {DomainError} from '../../../../shared/core/error.model';
 
 interface MaterialProps {
   id: string;
@@ -59,6 +60,31 @@ export class Material {
     });
 
     return Result.success<Material>(material);
+  }
+
+  public update(props: {
+    name: string;
+    pricePerUnit: number;
+    unit: string;
+  }): Result<Material> {
+    const nameResult = Name.create(props.name);
+    const priceResult = Money.create(props.pricePerUnit);
+
+    if (!props.unit || props.unit.trim().length === 0) {
+      return Result.failure<Material>(DomainErrors.Material.UnitRequired);
+    }
+
+    const combinedResult = Result.combine([nameResult, priceResult]);
+    if (combinedResult.isFailure) {
+      return Result.failure<Material>(combinedResult.error!);
+    }
+
+    return Result.success(new Material({
+      id: this.id,
+      name: nameResult.getValue(),
+      pricePerUnit: priceResult.getValue(),
+      unit: props.unit,
+    }));
   }
 
   public static hydrate(data: MaterialDto): Material {

@@ -80,7 +80,7 @@
     font-size: 0.875rem;
   }
 
-  &.status-available {
+  &.status-instock {
     background-color: #10b981;
     color: white;
   }
@@ -90,9 +90,13 @@
     color: white;
   }
 
-  &.status-in-progress {
+  &.status-draft {
     background-color: #f59e0b;
     color: white;
+  }
+  &.status-archived {
+    background-color: #68788f;
+    color: black;
   }
 }
 
@@ -107,4 +111,37 @@
 
 .delete-action {
   color: #ef4444;
+}
+
+.price-reference {
+  font-style: italic;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* ✅ Styles de prix avec les couleurs directement intégrées */
+.price {
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.3s, color 0.3s;
+  border: 1px solid transparent;
+
+  // Prix inférieur -> Utilise les couleurs de la palette "error"
+  &.price-lower {
+    background-color: #ffedea; // Correspond à error-95
+    color: #ba1a1a; // Correspond à error-40
+    border-color: #ffdad6; // Correspond à error-90
+  }
+
+  &.price-equal {
+    background-color: #eef0ff; // Correspond à primary-95
+    color: #565e74; // Correspond à primary-40
+    border-color: #dae2fd; // Correspond à primary-90
+  }
+
+  &.price-higher {
+    background-color: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+  }
 }
