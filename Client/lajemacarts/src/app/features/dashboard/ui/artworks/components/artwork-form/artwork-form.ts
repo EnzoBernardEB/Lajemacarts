@@ -1,13 +1,15 @@
-import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
 import {
-  FormArray,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators
-} from '@angular/forms';
-import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal
+} from '@angular/core';
+import {FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
@@ -18,9 +20,9 @@ import {Material} from '../../../../domain/models/material';
 import {ArtworkStatus, DimensionUnit, WeightCategory} from '../../../../domain/models/enums/enums';
 import {Artwork} from '../../../../domain/models/artwork';
 import {ArtworkMapper, ArtworkStatusOption, WeightCategoryOption} from '../../../mappers/artwork.mapper';
-import {CurrencyPipe, JsonPipe} from '@angular/common';
 import {debounceTime} from 'rxjs/operators';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {CurrencyPipe} from '@angular/common';
 
 export interface ArtworkFormData {
   artworkTypes: ArtworkType[];
@@ -28,131 +30,41 @@ export interface ArtworkFormData {
   artworkToEdit?: Artwork;
 }
 
+export interface ArtworkFormValue {
+  name: string;
+  description: string;
+  artworkTypeId: string;
+  creationYear: number;
+  hoursSpent: number;
+  sellingPrice: number;
+  status: ArtworkStatus;
+  weightCategory: WeightCategory;
+  dimensions: {
+    dimL: number;
+    dimW: number;
+    dimH: number;
+    dimUnit: DimensionUnit;
+  };
+  materials: { materialId: string, quantity: number }[];
+}
+
 @Component({
   selector: 'lajemacarts-artwork-form',
   standalone: true,
   imports: [
-    ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, CurrencyPipe
   ],
   templateUrl: './artwork-form.html',
-  styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-
-      h2[mat-dialog-title] {
-        flex-shrink: 0;
-        border-bottom: 1px solid var(--border-color, #e0e0e0);
-        padding-bottom: 1rem;
-        color: var(--text-primary, #212121);
-      }
-
-      mat-dialog-content {
-        flex-grow: 1;
-        overflow-y: auto;
-        padding: 1.5rem 0.5rem 1.5rem 1.5rem;
-        margin-top: 1rem;
-      }
-
-      mat-dialog-actions {
-        flex-shrink: 0;
-        border-top: 1px solid var(--border-color, #e0e0e0);
-        padding: 1rem 1.5rem;
-      }
-    }
-
-    .artwork-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    fieldset {
-      grid-column: 1 / -1;
-      border: 1px solid var(--border-color-light, #eeeeee);
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 0.5rem;
-
-      legend {
-        font-weight: 600;
-        padding: 0 0.5rem;
-        color: var(--text-secondary, #757575);
-      }
-    }
-
-    .dimensions-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .material-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 1rem;
-      align-items: center;
-      margin-bottom: 0.5rem;
-
-      .material-select {
-        flex-grow: 1;
-      }
-
-      .quantity-input {
-        max-width: 100px;
-      }
-    }
-
-    .add-material-btn {
-      margin-top: 0.5rem;
-      width: 100%;
-    }
-    .form-grid-prix {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .suggested-price {
-      text-align: left;
-
-      .suggested-price-label {
-        display: block;
-        font-size: 0.8rem;
-        color: var(--text-secondary, #757575);
-      }
-
-      .suggested-price-value {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 500;
-        color: var(--primary-color, #3f51b5);
-        padding-top: 4px;
-      }
-    }
-  `],
+  styleUrl: 'artwork-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ArtworkFormComponent implements OnInit{
+export class ArtworkFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  protected readonly dialogRef = inject(MatDialogRef<ArtworkFormComponent>);
-  protected readonly data: ArtworkFormData = inject(MAT_DIALOG_DATA);
   protected suggestedPrice = signal<number>(0);
   private readonly destroyRef = inject(DestroyRef);
+  readonly formData = input.required<ArtworkFormData>();
+  protected readonly save = output<ArtworkFormValue>();
 
   protected readonly dimensionUnits = Object.values(DimensionUnit);
   protected readonly weightCategories: WeightCategoryOption[] = ArtworkMapper.getWeightCategoryOptions();
@@ -175,12 +87,16 @@ export class ArtworkFormComponent implements OnInit{
     }),
     materials: this.fb.array([this.createMaterialGroup()]),
   });
-  ngOnInit(): void {
-    if (this.data.artworkToEdit) {
-      this.populateForm(this.data.artworkToEdit);
+
+  private readonly populateEffect = effect(() => {
+    const data = this.formData();
+    if (data.artworkToEdit) {
+      this.populateForm(data.artworkToEdit);
       this.updateSuggestedPrice(this.form.getRawValue());
     }
+  });
 
+  ngOnInit(): void {
     this.form.valueChanges.pipe(
       debounceTime(300),
       takeUntilDestroyed(this.destroyRef)
@@ -199,7 +115,7 @@ export class ArtworkFormComponent implements OnInit{
       return;
     }
 
-    const selectedType = this.data.artworkTypes.find(t => t.id === typeId);
+    const selectedType = this.formData().artworkTypes.find(t => t.id === typeId);
     if (!selectedType) {
       this.suggestedPrice.set(0);
       return;
@@ -207,13 +123,14 @@ export class ArtworkFormComponent implements OnInit{
 
     const calculatedPrice = Artwork.calculatePrice(
       selectedType,
-      this.data.materials,
+      this.formData().materials,
       materials,
       hours
     );
 
     this.suggestedPrice.set(calculatedPrice.amount);
   }
+
   private populateForm(artwork: Artwork): void {
     this.form.patchValue({
       name: artwork.name.value,
@@ -242,19 +159,57 @@ export class ArtworkFormComponent implements OnInit{
   }
 
 
-  get name(): FormControl { return this.form.get('name') as FormControl; }
-  get description(): FormControl { return this.form.get('description') as FormControl; }
-  get artworkTypeId(): FormControl { return this.form.get('artworkTypeId') as FormControl; }
-  get creationYear(): FormControl { return this.form.get('creationYear') as FormControl; }
-  get hoursSpent(): FormControl { return this.form.get('hoursSpent') as FormControl; }
-  get sellingPrice(): FormControl { return this.form.get('sellingPrice') as FormControl; }
-  get dimensionsGroup(): FormGroup { return this.form.get('dimensions') as FormGroup; }
-  get materialsArray(): FormArray { return this.form.get('materials') as FormArray; }
-  get dimL(): FormControl { return this.dimensionsGroup.get('dimL') as FormControl; }
-  get dimW(): FormControl { return this.dimensionsGroup.get('dimW') as FormControl; }
-  get dimH(): FormControl { return this.dimensionsGroup.get('dimH') as FormControl; }
-  get dimUnit(): FormControl { return this.dimensionsGroup.get('dimUnit') as FormControl; }
-  get status(): FormControl { return this.form.get('status') as FormControl; }
+  get name(): FormControl {
+    return this.form.get('name') as FormControl;
+  }
+
+  get description(): FormControl {
+    return this.form.get('description') as FormControl;
+  }
+
+  get artworkTypeId(): FormControl {
+    return this.form.get('artworkTypeId') as FormControl;
+  }
+
+  get creationYear(): FormControl {
+    return this.form.get('creationYear') as FormControl;
+  }
+
+  get hoursSpent(): FormControl {
+    return this.form.get('hoursSpent') as FormControl;
+  }
+
+  get sellingPrice(): FormControl {
+    return this.form.get('sellingPrice') as FormControl;
+  }
+
+  get dimensionsGroup(): FormGroup {
+    return this.form.get('dimensions') as FormGroup;
+  }
+
+  get materialsArray(): FormArray {
+    return this.form.get('materials') as FormArray;
+  }
+
+  get dimL(): FormControl {
+    return this.dimensionsGroup.get('dimL') as FormControl;
+  }
+
+  get dimW(): FormControl {
+    return this.dimensionsGroup.get('dimW') as FormControl;
+  }
+
+  get dimH(): FormControl {
+    return this.dimensionsGroup.get('dimH') as FormControl;
+  }
+
+  get dimUnit(): FormControl {
+    return this.dimensionsGroup.get('dimUnit') as FormControl;
+  }
+
+  get status(): FormControl {
+    return this.form.get('status') as FormControl;
+  }
 
   private createMaterialGroup(): FormGroup {
     return this.fb.group({
@@ -273,15 +228,38 @@ export class ArtworkFormComponent implements OnInit{
     }
   }
 
+  public resetForm(): void {
+    this.form.reset({
+      name: '',
+      description: '',
+      artworkTypeId: '',
+      creationYear: new Date().getFullYear(),
+      hoursSpent: 0,
+      sellingPrice: 0,
+      status: 'Draft',
+      weightCategory: WeightCategory.Light,
+      dimensions: {
+        dimL: 0,
+        dimW: 0,
+        dimH: 0,
+        dimUnit: DimensionUnit.Centimeters,
+      },
+    });
+
+    this.materialsArray.clear();
+    this.materialsArray.push(this.createMaterialGroup());
+
+    this.suggestedPrice.set(0);
+
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
+
   onSave(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    this.dialogRef.close(this.form.getRawValue());
-  }
-
-  onCancel(): void {
-    this.dialogRef.close();
+    this.save.emit(this.form.getRawValue() as ArtworkFormValue);
   }
 }

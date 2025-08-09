@@ -1,7 +1,7 @@
 import {computed, inject, InjectionToken} from '@angular/core';
 import {patchState, signalStore, withComputed, withFeature, withMethods, withState} from '@ngrx/signals';
 import {rxMethod} from '@ngrx/signals/rxjs-interop';
-import {catchError, EMPTY, forkJoin, pipe, switchMap, tap} from 'rxjs';
+import {catchError, EMPTY, forkJoin, of, pipe, switchMap, tap} from 'rxjs';
 
 import {Artwork} from '../../../domain/models/artwork';
 import {ArtworkType} from '../../../domain/models/artwork-type';
@@ -13,11 +13,13 @@ import {
   setPending,
   withRequestStatus
 } from '../../../../../shared/store/request-status.features';
+import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
+import {ArtworkStatus} from '../../../domain/models/enums/enums';
+import {withFilters} from '../../../../../shared/store/with-filtering-combine.feature';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
-import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
-import {ArtworkStatus} from '../../../domain/models/enums/enums';
+import {MediaUploadGateway} from '../../../domain/ ports/media-upload.gateway';
 
 export interface EnrichedArtwork {
   readonly artwork: Artwork;
@@ -29,26 +31,29 @@ export type ArtworkState = {
   readonly artworks: Artwork[];
   readonly artworkTypes: ArtworkType[];
   readonly materials: Material[];
-
-  readonly searchTerm: string;
-  readonly statusFilter: string | null;
-  readonly typeFilter: string | null;
 }
+
 export type ArtworkCreationPayload = Parameters<typeof Artwork.create>[0];
 export type UpdateArtworkPayload = ArtworkCreationPayload & {
   id: string;
   status: ArtworkStatus;
 };
+export type ArtworkCreationPayloadWithFiles = Omit<ArtworkCreationPayload, 'medias'> & { files: File[] };
+export type UpdateArtworkPayloadWithFiles = Omit<UpdateArtworkPayload, 'medias'> & { files: File[] };
+
 export const initialArtworkState = new InjectionToken<ArtworkState>('ArtworkStateToken', {
   factory: () => ({
     artworks: [],
     artworkTypes: [],
     materials: [],
-    searchTerm: '',
-    statusFilter: null,
-    typeFilter: null,
   }),
 });
+
+export enum ArtworkFilterKey {
+  SEARCH = 'search',
+  STATUS = 'status',
+  TYPE = 'type'
+}
 
 export const ArtworkStore = signalStore(
   withState<ArtworkState>(() => inject(initialArtworkState)),
@@ -65,14 +70,7 @@ export const ArtworkStore = signalStore(
 
     isEmpty: computed(() => store.artworks().length === 0),
     totalArtworks: computed(() => store.artworks().length),
-
-    hasActiveFilters: computed(() => {
-      return store.searchTerm().length > 0 ||
-        store.statusFilter() !== null ||
-        store.typeFilter() !== null;
-    }),
   })),
-
   withComputed((store) => ({
     enrichedArtworks: computed(() => {
       const artworks = store.artworks();
@@ -95,43 +93,19 @@ export const ArtworkStore = signalStore(
       });
     }),
   })),
+  withFeature(store => withFilters<EnrichedArtwork>(
+    computed(() => store.enrichedArtworks())
+  )),
   withComputed((store) => ({
-    filteredArtworks: computed(() => {
-      const enriched = store.enrichedArtworks();
-      const searchTerm = store.searchTerm().toLowerCase().trim();
-      const statusFilter = store.statusFilter();
-      const typeFilter = store.typeFilter();
-
-      if (!store.hasActiveFilters()) {
-        return enriched;
-      }
-
-      return enriched.filter((enrichedArtwork) => {
-        const {artwork, artworkType} = enrichedArtwork;
-
-        const matchesSearch = !searchTerm ||
-          artwork.name.value.toLowerCase().includes(searchTerm) ||
-          artwork.description.value.toLowerCase().includes(searchTerm) ||
-          (artworkType?.name.value.toLowerCase().includes(searchTerm) ?? false);
-
-        const matchesStatus = !statusFilter || artwork.status === statusFilter;
-        const matchesType = !typeFilter || artwork.artworkTypeId === typeFilter;
-
-        return matchesSearch && matchesStatus && matchesType;
-      });
-    }),
-  })),
-  withComputed(store => ({
-    filteredCount: computed(() => store.filteredArtworks().length),
-
     hasNoResults: computed(() => {
-      return store.totalArtworks() > 0 && store.filteredArtworks().length === 0;
+      return store.totalArtworks() > 0 && store.filteredEntities().length === 0;
     }),
   })),
   withMethods((store,
                artworkGateway = inject(ArtworkGateway),
                artworkTypeGateway = inject(ArtworkTypeGateway),
-               materialGateway = inject(MaterialGateway)
+               materialGateway = inject(MaterialGateway),
+               mediaUploadGateway = inject(MediaUploadGateway)
   ) => ({
     loadAllData: rxMethod<void>(
       pipe(
@@ -158,35 +132,54 @@ export const ArtworkStore = signalStore(
       )
     ),
 
-    addArtwork: rxMethod<ArtworkCreationPayload>(
+    addArtwork: rxMethod<ArtworkCreationPayloadWithFiles>(
       pipe(
         tap(() => patchState(store, setPending())),
         switchMap((payload) => {
-          const artworkResult = Artwork.create(payload);
+          const hasFilesToUpload = payload.files && payload.files.length > 0;
 
-          if (artworkResult.isFailure) {
-            patchState(store, setError(artworkResult.error!.message));
-            return EMPTY;
-          }
+          const upload$ = hasFilesToUpload
+            ? mediaUploadGateway.upload(payload.files)
+            : of([]);
 
-          const newArtwork = artworkResult.getValue();
+          return upload$.pipe(
+            switchMap((uploadedMedias) => {
+              const artworkPayload: ArtworkCreationPayload = {
+                ...payload,
+                medias: uploadedMedias,
+              };
 
-          return artworkGateway.add(newArtwork).pipe(
-            tap((createdArtwork) => {
-              patchState(store, (state) => ({
-                artworks: [...state.artworks, createdArtwork]
-              }), setFulfilled());
+              const artworkResult = Artwork.create(artworkPayload);
+
+              if (artworkResult.isFailure) {
+                patchState(store, setError(artworkResult.error!.message));
+                return EMPTY;
+              }
+
+              const newArtwork = artworkResult.getValue();
+
+              return artworkGateway.add(newArtwork).pipe(
+                tap((createdArtwork) => {
+                  patchState(store, (state) => ({
+                    artworks: [...state.artworks, createdArtwork]
+                  }), setFulfilled());
+                }),
+                catchError(() => {
+                  patchState(store, setError('Échec de l\'ajout de l\'œuvre'));
+                  return EMPTY;
+                })
+              );
             }),
-            catchError((error) => {
-              patchState(store, setError('Échec de l\'ajout de l\'œuvre'));
-              console.error('Error adding artwork:', error);
+            catchError(() => {
+              patchState(store, setError('Échec de l\'upload des médias'));
               return EMPTY;
             })
           );
         }),
       ),
     ),
-    updateArtwork: rxMethod<UpdateArtworkPayload>(
+
+    updateArtwork: rxMethod<UpdateArtworkPayloadWithFiles>(
       pipe(
         tap(() => {
           patchState(store, setPending());
@@ -195,26 +188,48 @@ export const ArtworkStore = signalStore(
         switchMap((payload) => {
           const artworkToUpdate = store.artworks().find(a => a.id === payload.id);
           if (!artworkToUpdate) {
-            patchState(store, setError('Œuvre non trouvée.'));
+            patchState(store, setError('Œuvre non trouvée pour la mise à jour.'));
             return EMPTY;
           }
 
-          const updateResult = artworkToUpdate.update(payload);
-          if (updateResult.isFailure) {
-            patchState(store, setError(updateResult.error!.message));
-            return EMPTY;
-          }
+          const hasFilesToUpload = payload.files && payload.files.length > 0;
+          const upload$ = hasFilesToUpload
+            ? mediaUploadGateway.upload(payload.files)
+            : of([]);
 
-          const updatedArtwork = updateResult.getValue();
+          return upload$.pipe(
+            switchMap((newlyUploadedMedias) => {
+              const existingMedias = artworkToUpdate.medias || [];
+              const allMedias = [...existingMedias, ...newlyUploadedMedias];
 
-          patchState(store, (state) => ({
-            artworks: state.artworks.map(a => a.id === updatedArtwork.id ? updatedArtwork : a)
-          }));
+              const finalUpdatePayload: UpdateArtworkPayload = {
+                ...payload,
+                medias: allMedias,
+              };
+              const updateResult = artworkToUpdate.update(finalUpdatePayload);
+              if (updateResult.isFailure) {
+                patchState(store, setError(updateResult.error!.message));
+                return EMPTY;
+              }
 
-          return artworkGateway.update(updatedArtwork).pipe(
-            tap(() => patchState(store, setFulfilled())),
+              const updatedArtwork = updateResult.getValue();
+
+              patchState(store, (state) => ({
+                artworks: state.artworks.map(a => a.id === updatedArtwork.id ? updatedArtwork : a)
+              }));
+
+              return artworkGateway.update(updatedArtwork).pipe(
+                tap(() => patchState(store, setFulfilled())),
+                catchError((error) => {
+                  patchState(store, {artworks: store.snapshot()!}, setError('Échec de la mise à jour de l\'œuvre'));
+                  console.error('Error updating artwork:', error);
+                  return EMPTY;
+                })
+              );
+            }),
             catchError((error) => {
-              patchState(store, { artworks: store.snapshot()! }, setError('Échec de la mise à jour'));
+              patchState(store, setError('Échec de l\'upload des nouveaux médias'));
+              console.error('Error uploading media for update:', error);
               return EMPTY;
             })
           );
@@ -236,7 +251,7 @@ export const ArtworkStore = signalStore(
           return artworkGateway.delete(id).pipe(
             tap(() => patchState(store, setFulfilled())),
             catchError((error) => {
-              patchState(store, { artworks: store.snapshot()! }, setError('Échec de la suppression'));
+              patchState(store, {artworks: store.snapshot()!}, setError('Échec de la suppression'));
               return EMPTY;
             })
           );
@@ -244,23 +259,69 @@ export const ArtworkStore = signalStore(
       )
     ),
     updateSearchTerm: (searchTerm: string) => {
-      patchState(store, {searchTerm: searchTerm.trim()});
-    },
+      const term = searchTerm.toLowerCase().trim();
 
-    updateStatusFilter: (statusFilter: string | null) => {
-      patchState(store, {statusFilter});
+      if (!term) {
+        store.removeFilter(ArtworkFilterKey.SEARCH);
+      } else {
+        store.setFilter(
+          ArtworkFilterKey.SEARCH,
+          (enrichedArtwork: EnrichedArtwork) => {
+            const {artwork, artworkType} = enrichedArtwork;
+            return artwork.name.value.toLowerCase().includes(term) ||
+              artwork.description.value.toLowerCase().includes(term) ||
+              (artworkType?.name.value.toLowerCase().includes(term) ?? false);
+          }
+        );
+      }
     },
-
-    updateTypeFilter: (typeFilter: string | null) => {
-      patchState(store, {typeFilter});
+    updateStatusFilter: (status: ArtworkStatus | null) => {
+      if (!status) {
+        store.removeFilter(ArtworkFilterKey.STATUS);
+      } else {
+        store.setFilter(
+          ArtworkFilterKey.STATUS,
+          (enrichedArtwork: EnrichedArtwork) =>
+            enrichedArtwork.artwork.status === status
+        );
+      }
     },
+    updateTypeFilter: (typeId: string | null) => {
+      if (!typeId) {
+        store.removeFilter(ArtworkFilterKey.TYPE);
+      } else {
+        store.setFilter(
+          ArtworkFilterKey.TYPE,
+          (enrichedArtwork: EnrichedArtwork) =>
+            enrichedArtwork.artwork.artworkTypeId === typeId
+        );
+      }
+    },
+    applyMultipleFilters: (filters: {
+      search?: string;
+      status?: ArtworkStatus | null;
+      type?: string | null;
+    }) => {
+      store.clearFilters();
 
-    clearFilters: () => {
-      patchState(store, {
-        searchTerm: '',
-        statusFilter: null,
-        typeFilter: null
-      });
+      if (filters.search) {
+        store.updateSearchTerm(filters.search);
+      }
+      if (filters.status) {
+        store.updateStatusFilter(filters.status);
+      }
+      if (filters.type) {
+        store.updateTypeFilter(filters.type);
+      }
+    },
+    
+    getCurrentFilters: () => {
+      return {
+        hasSearch: store.hasFilter(ArtworkFilterKey.SEARCH),
+        hasStatus: store.hasFilter(ArtworkFilterKey.STATUS),
+        hasType: store.hasFilter(ArtworkFilterKey.TYPE),
+        activeCount: store.activeFiltersCount()
+      };
     },
   }))
 );

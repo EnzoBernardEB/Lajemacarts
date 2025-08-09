@@ -1,0 +1,76 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  width: 256px;
+  background-color: var(--color-background);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  height: 100%;
+
+  @media (min-width: 1200px) {
+    width: 280px;
+    padding: 2rem;
+  }
+
+  @media (min-width: 2560px) {
+    width: 320px;
+    padding: 2.5rem;
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  padding-left: 16px;
+  color: var(--text-primary);
+
+  @media (min-width: 2560px) {
+    font-size: 1.5rem;
+    gap: 1rem;
+    margin-bottom: 3rem;
+  }
+}
+
+.mat-mdc-list-item {
+  color: var(--color-text-light) !important;
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+
+  &:hover {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--color-text-light) !important;
+  }
+
+  @media (min-width: 2560px) {
+    margin-bottom: 0.5rem;
+    border-radius: 12px;
+
+    .mat-mdc-list-item-content {
+      padding: 1rem 1.5rem !important;
+    }
+
+    .mat-icon {
+      margin-right: 1.5rem !important;
+    }
+  }
+}
+
+.menu-item {
+  align-items: center !important;
+}
+
+.mat-mdc-list-item.active-link {
+  background-color: var(--color-accent) !important;
+  color: var(--color-text-dark) !important;
+  border: 1px solid var(--color-accent);
+
+  @media (min-width: 2560px) {
+    border-radius: 12px;
+  }
+}

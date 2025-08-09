@@ -4,19 +4,14 @@ import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {ArtworksTableComponent} from './components/artwork-table/artwork-table.component';
 import {ArtworkFilters, ArtworksFiltersComponent} from './components/filter/filter.component';
-import {
-  ArtworkCreationPayload,
-  ArtworkStore,
-  UpdateArtworkPayload
-} from '../../application/store/artwork/artwork.store';
+import {ArtworkStore} from '../../application/store/artwork/artwork.store';
 import {ArtworkListViewModel, ArtworkMapper} from '../mappers/artwork.mapper';
 import {ArtworksEmptyStateComponent} from '../../../../shared/components/empty-state/empty-state.component';
 import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
-import {MatDialog} from '@angular/material/dialog';
 import {filter, take} from 'rxjs';
-import {ArtworkFormComponent, ArtworkFormData} from './components/artwork-form/artwork-form';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {Router} from '@angular/router';
 
 
 @Component({
@@ -104,9 +99,9 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 })
 export class ArtworksPage {
   protected readonly store = inject(ArtworkStore);
-  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
 
   protected readonly listViewModels = computed(() =>
     ArtworkMapper.toListViewModels(this.store.filteredArtworks())
@@ -137,62 +132,12 @@ export class ArtworksPage {
   }
 
   protected onAddArtwork(): void {
-    const dialogRef = this.dialog.open<ArtworkFormComponent, ArtworkFormData>(ArtworkFormComponent, {
-      maxWidth: '100vw',
-      maxHeight: '100vh',
-      height: '90%',
-      width: '90%',
-      data: {
-        artworkTypes: this.store.artworkTypes(),
-        materials: this.store.materials(),
-      },
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().pipe(
-      filter(result => !!result)
-    ).subscribe(formValue => {
-      const { dimensions, ...rest } = formValue;
-      const payload: ArtworkCreationPayload = {
-        ...rest,
-        ...dimensions
-      };
-      this.store.addArtwork(payload);
-      this.observeRequestStatus('Ajout de l\'œuvre');
-    });
+    this.router.navigate(['/tableau-de-bord/artworks/create']);
   }
 
   protected onEditArtwork(viewModel: ArtworkListViewModel): void {
-    const artworkToEdit = viewModel.originalData.artwork;
-
-    const dialogRef = this.dialog.open<ArtworkFormComponent, ArtworkFormData>(ArtworkFormComponent, {
-      maxWidth: '100vw',
-      maxHeight: '100vh',
-      height: '90%',
-      width: '90%',
-      data: {
-        artworkTypes: this.store.artworkTypes(),
-        materials: this.store.materials(),
-        artworkToEdit: artworkToEdit,
-      },
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().pipe(
-      filter(result => !!result)
-    ).subscribe(formValue => {
-      const { dimensions, ...rest } = formValue;
-      const payload: UpdateArtworkPayload = {
-        id: artworkToEdit.id,
-        ...rest,
-        ...dimensions
-      };
-
-      this.store.updateArtwork(payload);
-      this.observeRequestStatus(`Mise à jour de "${payload.name}"`);
-    });
+    this.router.navigate(['/tableau-de-bord/artworks/edit', viewModel.id]);
   }
-
 
   protected onDeleteArtwork(viewModel: ArtworkListViewModel): void {
     if (confirm(`Êtes-vous sûr de vouloir supprimer "${viewModel.name}" ?`)) {
@@ -202,14 +147,14 @@ export class ArtworksPage {
   }
 
   private observeRequestStatus(action: string): void {
-    toObservable(this.store.requestStatus, { injector: this.injector }).pipe(
+    toObservable(this.store.requestStatus, {injector: this.injector}).pipe(
       filter(status => status === 'fulfilled' || typeof status === 'object'),
       take(1)
     ).subscribe(finalStatus => {
       if (finalStatus === 'fulfilled') {
-        this.snackBar.open(`${action} réussie !`, 'OK', { duration: 3000, panelClass: ['success-snackbar'] });
+        this.snackBar.open(`${action} réussie !`, 'OK', {duration: 3000, panelClass: ['success-snackbar']});
       } else {
-        this.snackBar.open(`Échec : ${this.store.error()}`, 'Fermer', { duration: 5000, panelClass: ['error-snackbar'] });
+        this.snackBar.open(`Échec : ${this.store.error()}`, 'Fermer', {duration: 5000, panelClass: ['error-snackbar']});
       }
     });
   }

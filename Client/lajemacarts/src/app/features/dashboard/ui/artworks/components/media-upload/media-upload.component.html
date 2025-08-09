@@ -1,0 +1,53 @@
+<div class="media-upload-container">
+  <div
+    class="drop-zone"
+    [class.dragging]="isDragging()"
+    tabindex="0"
+    (click)="onAreaClick()"
+    (keydown.enter)="onAreaClick()"
+    (drop)="onDrop($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)">
+
+    <input type="file" #fileInput hidden multiple (change)="onFileSelected($event)" accept="image/*,video/*">
+
+    <div class="drop-zone-content">
+      <mat-icon>cloud_upload</mat-icon>
+      <p class="main-text">Glissez-déposez vos fichiers ici</p>
+      <p class="sub-text">ou <span class="link">cliquez pour sélectionner</span></p>
+      <p class="file-types">(Images et Vidéos uniquement)</p>
+    </div>
+  </div>
+
+  @if (allPreviews().length > 0) {
+    <div class="previews-grid">
+      @for (preview of allPreviews(); track preview.url) {
+        <mat-card class="preview-card">
+          <div class="preview-media">
+            @if (preview.type === 'image') {
+              <img [src]="preview.url" [alt]="preview.name">
+            } @else {
+              <video muted loop>
+                <source [src]="preview.url">
+              </video>
+              <mat-icon class="video-icon">videocam</mat-icon>
+            }
+            @if (preview.file) {
+              <button mat-icon-button class="remove-btn" (click)="removeNewFile(preview); $event.stopPropagation()">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            }
+          </div>
+          <mat-card-content class="preview-info">
+            <p class="file-name" [title]="preview.name">{{ preview.name }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <mat-icon>photo_library</mat-icon>
+      <p>Aucun média ajouté pour le moment.</p>
+    </div>
+  }
+</div>

@@ -12,47 +12,28 @@ import {catchError, EMPTY, pipe, switchMap, tap} from 'rxjs';
 import {ArtworkType} from '../../../domain/models/artwork-type';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {withSnapshot} from '../../../../../shared/store/snapshot.feature';
+import {withFiltering} from '../../../../../shared/store/with-filtering.feature';
 
 
 export type ArtworkTypeState = {
   readonly artworkTypes: ArtworkType[];
-  readonly searchTerm: string;
 }
 
 export const initialArtworkTypeState = new InjectionToken<ArtworkTypeState>('ArtworkTypeStateToken', {
   factory: () => ({
     artworkTypes: [],
-    searchTerm: ''
   }),
 });
 
 export const ArtworkTypeStore = signalStore(
   withState<ArtworkTypeState>(() => inject(initialArtworkTypeState)),
   withFeature((store) => withSnapshot(store.artworkTypes)),
+  withFeature((store) => withFiltering(store.artworkTypes)),
   withRequestStatus(),
   withComputed((store) => ({
     isEmpty: computed(() => store.artworkTypes().length === 0),
     totalArtworkTypes: computed(() => store.artworkTypes().length),
-    hasActiveFilters: computed(() => {
-      return store.searchTerm().length > 0
-    }),
-  })),
-  withComputed((store) => ({
-    filteredArtworkTypes: computed(() => {
-      const artworkTypes = store.artworkTypes();
-      const searchTerm = store.searchTerm().toLowerCase().trim();
-      if (!store.hasActiveFilters()) {
-        return artworkTypes;
-      }
-
-      return artworkTypes.filter((artworkType) => {
-        return !searchTerm ||
-          artworkType.name.value.toLowerCase().includes(searchTerm);
-      });
-    }),
-  })),
-  withComputed(store => ({
-    filteredCount: computed(() => store.filteredArtworkTypes().length),
+    filteredArtworkTypes: computed(() => store.filteredEntities()),
   })),
   withMethods((store, artworkTypeGateway = inject(ArtworkTypeGateway)) => ({
     loadAll: rxMethod<void>(
@@ -156,7 +137,7 @@ export const ArtworkTypeStore = signalStore(
             catchError((error) => {
               const snapshot = store.snapshot();
               if (snapshot) {
-                patchState(store, { artworkTypes: snapshot });
+                patchState(store, {artworkTypes: snapshot});
               }
               patchState(store, setError(error.message || 'Delete Failed'));
               return EMPTY;
@@ -165,13 +146,5 @@ export const ArtworkTypeStore = signalStore(
         })
       )
     ),
-    updateSearchTerm: (term: string) => {
-      patchState(store, {searchTerm: term.trim()});
-    },
-    clearFilters: () => {
-      patchState(store, {
-        searchTerm: '',
-      });
-    },
   }))
 );

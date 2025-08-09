@@ -42,7 +42,6 @@ import {SidebarComponent} from './components/sidebar/sidebar.component';
       overflow-y: auto;
       padding: 1rem;
 
-      // Responsive padding
       @media (min-width: 768px) {
         padding: 1.5rem;
       }
