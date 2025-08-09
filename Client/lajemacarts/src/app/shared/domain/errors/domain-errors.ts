@@ -8,7 +8,8 @@ export const DomainErrors = {
     PriceCannotBeNegative: new DomainError('Artwork.PriceCannotBeNegative', 'Le prix ne peut pas être négatif.'),
     NotFound: new DomainError('Artwork.NotFound', 'L\'oeuvre est introuvable.'),
     NotInStock: new DomainError('Artwork.NotInStock', 'Seule une œuvre en stock peut être vendue.'),
-    NotDraft: new DomainError('Artwork.NotDraft', 'Seul un brouillon peut être mis en stock.')
+    NotDraft: new DomainError('Artwork.NotDraft', 'Seul un brouillon peut être mis en stock.'),
+    MediaUrlInvalid: new DomainError('Artwork.MediaUrlInvalid', "L'URL du média est requise et doit être valide."),
   },
   ArtworkType: {
     NotFound: new DomainError('ArtworkType.NotFound', 'Le type est introuvable.'),

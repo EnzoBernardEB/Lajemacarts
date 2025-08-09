@@ -1,9 +1,13 @@
+// dashboard.routes.ts
+
 import {Routes} from '@angular/router';
 import {
   artworkGatewayProvider,
   artworkTypeGatewayProvider,
-  materialGatewayProvider
+  materialGatewayProvider,
+  mediaUploadGatewayProvider
 } from "./infrastructure/providers/artwork-gateway.provider";
+import {ArtworkStore} from './application/store/artwork/artwork.store'; // 👈 1. Importer le Store
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -13,21 +17,28 @@ export const DASHBOARD_ROUTES: Routes = [
   },
   {
     path: 'artworks',
-    loadComponent: () => import('./ui/artworks/artworks.page').then(m => m.ArtworksPage),
-    providers: [artworkGatewayProvider, materialGatewayProvider, artworkTypeGatewayProvider],
+    providers: [
+      ArtworkStore,
+      artworkGatewayProvider,
+      materialGatewayProvider,
+      artworkTypeGatewayProvider,
+      mediaUploadGatewayProvider
+    ],
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./ui/artworks/artworks.page').then(m => m.ArtworksPage),
+      },
+      {
+        path: 'create',
+        loadComponent: () => import('./ui/artworks/artwork-form.page').then(m => m.ArtworkFormPage),
+      },
+      {
+        path: 'edit/:id',
+        loadComponent: () => import('./ui/artworks/artwork-form.page').then(m => m.ArtworkFormPage),
+      }
+    ]
   },
-  // {
-  //   path: 'artworks/new',
-  //   loadComponent: () => import('./ui/artwork-form.page').then(m => m.ArtworkFormPage),
-  //   data: {isEditMode: false},
-  //   providers: [artworkGatewayProvider],
-  // },
-  // {
-  //   path: 'artworks/:id/edit',
-  //   loadComponent: () => import('./ui/artwork-form.page').then(m => m.ArtworkFormPage),
-  //   data: {isEditMode: true},
-  //   providers: [artworkGatewayProvider],
-  // },
   {
     path: 'materials',
     loadComponent: () => import('./ui/materials/materials.page').then(m => m.MaterialsPage),

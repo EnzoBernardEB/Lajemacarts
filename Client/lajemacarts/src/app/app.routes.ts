@@ -20,6 +20,13 @@ export const routes: Routes = [
         redirectTo: 'accueil',
         pathMatch: 'full',
       },
+      // {
+      //   path: 'galerie',
+      //   component: GalleryLayoutComponent,
+      //   loadChildren: () => import(
+      //     './features/gallery/routes'
+      //     ).then(m => m.GALLERY_ROUTES)
+      // },
       {
         path: 'tableau-de-bord',
         component: DashboardLayoutComponent,
