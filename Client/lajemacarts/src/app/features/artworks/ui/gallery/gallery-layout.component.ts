@@ -56,10 +56,5 @@ import {RouterOutlet} from '@angular/router';
   `
 })
 export class GalleryLayoutComponent {
-  // Navigation spécifique à la galerie
-  galleryNavItems = [
-    {name: 'Accueil', route: '/gallery/home'},
-    {name: 'Toutes les œuvres', route: '/gallery/artworks'},
-    {name: 'À propos', route: '/gallery/about'},
-  ];
+  
 }

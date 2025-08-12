@@ -1,13 +1,9 @@
-import {Material} from '../../../domain/models/material';
 import {computed, inject} from '@angular/core';
 import {signalStore, withComputed, withFeature, withState} from '@ngrx/signals';
 import {initialMaterialState} from './material.tokens';
 import {withFiltering} from '../../../../../shared/store/with-filtering.feature';
 import {withMaterialCrud} from './material-crud.feature';
-
-export interface MaterialState {
-  readonly materials: Material[];
-}
+import {MaterialState} from './material.types';
 
 
 export const MaterialStore = signalStore(
@@ -20,7 +16,6 @@ export const MaterialStore = signalStore(
     hasNoResults: computed(() =>
       store.materials().length > 0 && store.filteredEntities().length === 0
     ),
-    filteredCount: computed(() => store.filteredEntities().length),
   })),
   withMaterialCrud()
 );

@@ -141,7 +141,7 @@ export function withArtworkCrud() {
 
                 const updatedArtwork = updateResult.getValue();
                 patchState(store, (state) => ({
-                  artworks: state.artworks.map((a: any) =>
+                  artworks: state.artworks.map((a: Artwork) =>
                     a.id === updatedArtwork.id ? updatedArtwork : a
                   )
                 }));

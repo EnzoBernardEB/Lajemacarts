@@ -16,7 +16,6 @@ export const ArtworkTypeStore = signalStore(
     hasNoResults: computed(() =>
       store.artworkTypes().length > 0 && store.filteredEntities().length === 0
     ),
-    filteredCount: computed(() => store.filteredEntities().length),
   })),
   withArtworkTypeCrud()
 );

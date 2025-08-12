@@ -46,8 +46,7 @@ import {ArtworkListViewModel} from '../../../dashboard/mappers/artwork.mapper';
 
           <h3>Description</h3>
           <mat-divider></mat-divider>
-          <p class="description">{{ artwork.thumbnailUrl }}</p>
-
+          <p class="description">{{ artwork.originalData.artwork.description.value }}</p>
           <mat-chip-listbox aria-label="Statut de l'œuvre">
             <mat-chip [class]="artwork.statusClass" selected>{{ artwork.statusLabel }}</mat-chip>
           </mat-chip-listbox>

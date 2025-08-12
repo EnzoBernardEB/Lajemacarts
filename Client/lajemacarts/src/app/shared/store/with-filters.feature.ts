@@ -12,9 +12,9 @@ export function withFilters<Entity>(
       filters: new Map<string, FilterPredicate<Entity>>() as FilterMap<Entity>,
     })),
 
-    withComputed((store) => ({
-      filteredEntities: computed(() => {
-        const currentFilters = store.filters();
+    withComputed(({filters}) => {
+      const filteredEntities = computed(() => {
+        const currentFilters = filters();
         const allFilters = Array.from(currentFilters.values());
 
         if (allFilters.length === 0) {
@@ -24,16 +24,15 @@ export function withFilters<Entity>(
         return collectionSignal().filter((item: Entity) =>
           allFilters.every(predicate => predicate(item))
         );
-      }),
+      });
 
-      hasActiveFilters: computed(() => store.filters().size > 0),
-    })),
-
-    withComputed((store) => ({
-      filteredCount: computed(() => store.filteredEntities().length),
-      activeFiltersCount: computed(() => store.filters().size),
-    })),
-
+      return {
+        filteredEntities,
+        hasActiveFilters: computed(() => filters().size > 0),
+        activeFiltersCount: computed(() => filters().size), // Il est bien là !
+        filteredCount: computed(() => filteredEntities().length),
+      };
+    }),
     withMethods((store) => ({
       setFilter(key: string, predicate: FilterPredicate<Entity> | null): void {
         const currentFilters = new Map(store.filters());

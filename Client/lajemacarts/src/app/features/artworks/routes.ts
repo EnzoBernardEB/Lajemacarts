@@ -29,7 +29,8 @@ export const GALLERY_ROUTES: Routes = [
       },
     ]
   },
-]
+];
+
 export const DASHBOARD_ROUTES: Routes = [
   {
     path: '',
