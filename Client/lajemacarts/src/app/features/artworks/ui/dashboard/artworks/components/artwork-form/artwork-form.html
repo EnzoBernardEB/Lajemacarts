@@ -1,0 +1,182 @@
+<form [formGroup]="form" class="artwork-form">
+  <mat-form-field class="full-width">
+    <mat-label>Nom de l'œuvre</mat-label>
+    <input matInput formControlName="name" required cdkFocusInitial>
+    @if (name.hasError('required') && name.touched) {
+      <mat-error>Le nom est requis.</mat-error>
+    }
+    @if (name.hasError('minlength') && name.touched) {
+      <mat-error>Le nom doit contenir au moins 3 caractères.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field class="full-width">
+    <mat-label>Description</mat-label>
+    <textarea matInput formControlName="description" rows="3" required></textarea>
+    @if (description.hasError('required') && description.touched) {
+      <mat-error>La description est requise.</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="form-grid">
+    <mat-form-field>
+      <mat-label>Type d'œuvre</mat-label>
+      <mat-select formControlName="artworkTypeId" required>
+        @for (type of formData().artworkTypes; track type.id) {
+          <mat-option [value]="type.id">{{ type.name.value }}</mat-option>
+        }
+      </mat-select>
+      @if (artworkTypeId.hasError('required') && artworkTypeId.touched) {
+        <mat-error>Le type est requis.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Année de création</mat-label>
+      <input matInput type="number" formControlName="creationYear" required>
+      @if (creationYear.hasError('required') && creationYear.touched) {
+        <mat-error>L'année est requise.</mat-error>
+      }
+      @if (creationYear.hasError('max') && creationYear.touched) {
+        <mat-error>L'année ne peut pas être dans le futur.</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <fieldset class="dimensions-group" formGroupName="dimensions">
+    <legend>Dimensions</legend>
+    <mat-form-field>
+      <mat-label>Longueur</mat-label>
+      <input matInput type="number" formControlName="length" required>
+      @if (length.hasError('required') && length.touched) {
+        <mat-error>Requis</mat-error>
+      }
+      @if (length.hasError('min') && length.touched) {
+        <mat-error>Doit être > 0</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Largeur</mat-label>
+      <input matInput type="number" formControlName="width" required>
+      @if (width.hasError('required') && width.touched) {
+        <mat-error>Requis</mat-error>
+      }
+      @if (width.hasError('min') && width.touched) {
+        <mat-error>Doit être > 0</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Hauteur</mat-label>
+      <input matInput type="number" formControlName="height" required>
+      @if (height.hasError('required') && height.touched) {
+        <mat-error>Requis</mat-error>
+      }
+      @if (height.hasError('min') && height.touched) {
+        <mat-error>Doit être > 0</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Unité</mat-label>
+      <mat-select formControlName="unit" required>
+        @for (unit of dimensionUnits; track unit) {
+          <mat-option [value]="unit">{{ unit }}</mat-option>
+        }
+      </mat-select>
+      @if (unit.hasError('required') && unit.touched) {
+        <mat-error>Requis</mat-error>
+      }
+    </mat-form-field>
+  </fieldset>
+
+  <fieldset formArrayName="materials">
+    <legend>Matériaux utilisés</legend>
+    @for (materialGroup of materialsArray.controls; track i; let i = $index) {
+      <div class="material-row" [formGroupName]="i">
+
+        <mat-form-field class="material-select">
+          <mat-label>Matériau</mat-label>
+          <mat-select formControlName="materialId" required>
+            @for (material of formData().materials; track material.id) {
+              <mat-option [value]="material.id">{{ material.name.value }} (unité : {{ material.unit }})</mat-option>
+            }
+          </mat-select>
+          @if (materialGroup.get('materialId')?.hasError('required') && materialGroup.get('materialId')?.touched) {
+            <mat-error>Le matériau est requis.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="quantity-input">
+          <mat-label>Qté</mat-label>
+          <input matInput type="number" formControlName="quantity" min="1" required>
+          @if (materialGroup.get('quantity')?.hasError('required') && materialGroup.get('quantity')?.touched) {
+            <mat-error>Requis</mat-error>
+          }
+          @if (materialGroup.get('quantity')?.hasError('min') && materialGroup.get('quantity')?.touched) {
+            <mat-error>Min 1</mat-error>
+          }
+        </mat-form-field>
+        @if (materialsArray.length > 1) {
+          <button mat-icon-button type="button" (click)="removeMaterial(i)" aria-label="Supprimer ce matériau">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        }
+      </div>
+    }
+    <button mat-stroked-button type="button" (click)="addMaterial()" class="add-material-btn">
+      <mat-icon>add</mat-icon>
+      Ajouter un matériau
+    </button>
+  </fieldset>
+
+  <fieldset class="details-section">
+    <legend>Détails Techniques et Prix</legend>
+    <div class="form-grid-prix">
+
+      <mat-form-field>
+        <mat-label>Heures travaillées</mat-label>
+        <input matInput type="number" formControlName="hoursSpent" required>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Prix de vente (€)</mat-label>
+        <input matInput type="number" formControlName="sellingPrice" required>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Catégorie de poids</mat-label>
+        <mat-select formControlName="weightCategory" required>
+          @for (cat of weightCategories; track cat.id) {
+            <mat-option [value]="cat.id">{{ cat.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Prix Suggéré</mat-label>
+        <input matInput type="text" [disabled]="true" [value]="suggestedPrice() | currency:'EUR':'symbol':'1.2-2'">
+      </mat-form-field>
+    </div>
+  </fieldset>
+
+  @if (formData().artworkToEdit) {
+    <fieldset class="status-section">
+      <legend>Statut de l'Œuvre</legend>
+      <mat-form-field>
+        <mat-label>Statut</mat-label>
+        <mat-select formControlName="status" required>
+          @for (option of statusOptions; track option.id) {
+            <mat-option [value]="option.id">
+              <mat-icon>{{ option.icon }}</mat-icon>
+              <span>{{ option.label }}</span>
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </fieldset>
+  }
+</form>
+
+<div class="form-actions">
+  <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSave()">
+    {{ formData().artworkToEdit ? 'Mettre à jour' : 'Enregistrer' }}
+  </button>
+</div>

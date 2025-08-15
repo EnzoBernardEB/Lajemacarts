@@ -1,0 +1,86 @@
+.artwork-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.artwork-card {
+  cursor: pointer;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    background-color: var(--bg-tertiary);
+  }
+
+  // Uniformisation des titres avec le style de la table
+  .mat-mdc-card-title {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .mat-mdc-card-subtitle {
+    color: var(--text-secondary);
+  }
+
+  .mat-mdc-card-header {
+    padding-bottom: 8px;
+  }
+}
+
+.artwork-image-wrapper {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.artwork-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 0 16px 16px; // Ajustement du padding
+}
+
+.dimensions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+// Reprise exacte des styles des puces de statut
+.status-chip {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 16px;
+
+  &.status-instock {
+    background-color: #10b981;
+    color: white;
+  }
+
+  &.status-sold {
+    background-color: #6b7280;
+    color: white;
+  }
+
+  &.status-draft {
+    background-color: #ff897d;
+    color: white;
+  }
+
+  &.status-archived {
+    background-color: #68788f;
+    color: black;
+  }
+}

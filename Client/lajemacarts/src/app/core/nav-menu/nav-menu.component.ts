@@ -65,7 +65,7 @@ interface NavLink {
 export class NavMenuComponent {
   protected readonly navLinks = signal<NavLink[]>([
     {path: '/accueil', label: 'Accueil'},
-    {path: '/galerie', label: 'Galerie', disabled: true},
+    {path: '/galerie', label: 'Galerie'},
     {path: '/tableau-de-bord', label: 'Tableau de bord'},
     {path: '/dashboard/materials', label: 'Matériaux'},
   ]);
