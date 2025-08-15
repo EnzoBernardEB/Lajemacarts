@@ -59,7 +59,7 @@ import {MatIconModule} from '@angular/material/icon';
     }
   `
 })
-export class PageHeaderComponent {
+export class ArtworkDashboardHeaderComponent {
   title = input<string>('Titre de la Page');
   addButtonText = input<string>('Ajouter');
   addClicked = output<void>();

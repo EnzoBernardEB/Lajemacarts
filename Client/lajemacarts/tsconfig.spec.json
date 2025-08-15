@@ -5,7 +5,9 @@
     "types": [
       "jest"
     ],
-    "target": "es2016"
+    "target": "es2022",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/**/*.spec.ts",

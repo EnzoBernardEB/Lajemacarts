@@ -82,10 +82,8 @@ export function withArtworkFilters() {
         }
       },
 
-      clearFilters(): void {
-        if (store.clearFilters) {
-          store.clearFilters();
-        }
+      clearAllArtworkFilters(): void {
+        store.clearFilters();
 
         patchState(store, {
           currentSearchTerm: '',
@@ -93,11 +91,6 @@ export function withArtworkFilters() {
           currentTypeFilter: null,
           currentMaterialFilter: null
         });
-
-        store.removeFilter(ArtworkFilterKey.SEARCH);
-        store.removeFilter(ArtworkFilterKey.STATUS);
-        store.removeFilter(ArtworkFilterKey.TYPE);
-        store.removeFilter(ArtworkFilterKey.MATERIAL);
       },
 
       applyMultipleFilters(filters: {
@@ -106,7 +99,7 @@ export function withArtworkFilters() {
         type?: string | null;
         material?: string | null;
       }): void {
-        this.clearFilters();
+        store.clearFilters();
 
         if (filters.search !== undefined) {
           this.updateSearchTerm(filters.search);

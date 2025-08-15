@@ -1,14 +1,14 @@
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
-import { HarnessLoader } from '@angular/cdk/testing';
-import { MatInputHarness } from '@angular/material/input/testing';
-import { MatButtonHarness } from '@angular/material/button/testing';
-import { Component, signal } from '@angular/core';
-import { SearchTextFilterComponent } from './search-text-filter.component';
+import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
+import {HarnessLoader} from '@angular/cdk/testing';
+import {MatInputHarness} from '@angular/material/input/testing';
+import {MatButtonHarness} from '@angular/material/button/testing';
+import {Component, signal} from '@angular/core';
+import {SearchTextFilterComponent} from './search-text-filter.component';
 import {MatFormFieldHarness} from '@angular/material/form-field/testing';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 
 @Component({
-  standalone: true,
+
   imports: [SearchTextFilterComponent],
   template: `
     <lajemacarts-text-search-filter
@@ -53,7 +53,7 @@ describe('SearchTextFilterComponent', () => {
     it('should display the correct label and placeholder', async () => {
       await renderComponent();
 
-      const formField = await loader.getHarness(MatFormFieldHarness.with({ floatingLabelText: 'Rechercher un test' }));
+      const formField = await loader.getHarness(MatFormFieldHarness.with({floatingLabelText: 'Rechercher un test'}));
 
       expect(await formField.getLabel()).toBe('Rechercher un test');
 
@@ -73,7 +73,8 @@ describe('SearchTextFilterComponent', () => {
   });
 
   describe('User Interaction & Outputs', () => {
-    it('should emit searchTermChange with a debounce when user types', fakeAsync(async () => {
+    it('should emit searchTermChange with a debounce when user types', async () => {
+      jest.useFakeTimers();
       await renderComponent();
 
       const searchInput = await loader.getHarness(MatInputHarness);
@@ -81,11 +82,13 @@ describe('SearchTextFilterComponent', () => {
 
       expect(hostComponent.onSearchTermChange).not.toHaveBeenCalled();
 
-      tick(300);
+      jest.advanceTimersByTime(300);
 
       expect(hostComponent.onSearchTermChange).toHaveBeenCalledWith('test search');
       expect(hostComponent.onSearchTermChange).toHaveBeenCalledTimes(1);
-    }));
+
+      jest.useRealTimers();
+    });
 
     it('should emit clearFilters and clear the input when clear button is clicked', async () => {
       await renderComponent();
@@ -93,7 +96,7 @@ describe('SearchTextFilterComponent', () => {
       hostComponent.initialSearchTerm.set('un filtre actif');
       fixture.detectChanges();
 
-      const clearButton = await loader.getHarness(MatButtonHarness.with({ text: /Effacer/ }));
+      const clearButton = await loader.getHarness(MatButtonHarness.with({text: /Effacer/}));
       await clearButton.click();
 
       expect(hostComponent.onClearFilters).toHaveBeenCalledTimes(1);
@@ -109,7 +112,7 @@ describe('SearchTextFilterComponent', () => {
       hostComponent.hasActiveFilters.set(false);
       fixture.detectChanges();
 
-      const clearButtons = await loader.getAllHarnesses(MatButtonHarness.with({ text: /Effacer/ }));
+      const clearButtons = await loader.getAllHarnesses(MatButtonHarness.with({text: /Effacer/}));
       expect(clearButtons.length).toBe(0);
     });
 
@@ -118,7 +121,7 @@ describe('SearchTextFilterComponent', () => {
       hostComponent.hasActiveFilters.set(true);
       fixture.detectChanges();
 
-      const clearButton = await loader.getHarness(MatButtonHarness.with({ text: /Effacer/ }));
+      const clearButton = await loader.getHarness(MatButtonHarness.with({text: /Effacer/}));
       expect(clearButton).toBeDefined();
     });
   });

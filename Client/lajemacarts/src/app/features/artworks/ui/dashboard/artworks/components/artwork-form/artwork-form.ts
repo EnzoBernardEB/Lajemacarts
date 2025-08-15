@@ -40,17 +40,17 @@ export interface ArtworkFormValue {
   status: ArtworkStatus;
   weightCategory: WeightCategory;
   dimensions: {
-    dimL: number;
-    dimW: number;
-    dimH: number;
-    dimUnit: DimensionUnit;
+    length: number;
+    width: number;
+    height: number;
+    unit: DimensionUnit;
   };
   materials: { materialId: string, quantity: number }[];
 }
 
 @Component({
   selector: 'lajemacarts-artwork-form',
-  standalone: true,
+
   imports: [
     ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, CurrencyPipe
@@ -80,10 +80,10 @@ export class ArtworkFormComponent implements OnInit {
     status: new FormControl<ArtworkStatus>('Draft', Validators.required),
     weightCategory: new FormControl<WeightCategory>(WeightCategory.Light, Validators.required),
     dimensions: this.fb.group({
-      dimL: [0, [Validators.required, Validators.min(1)]],
-      dimW: [0, [Validators.required, Validators.min(1)]],
-      dimH: [0, [Validators.required, Validators.min(1)]],
-      dimUnit: new FormControl<DimensionUnit>(DimensionUnit.Centimeters, Validators.required),
+      length: [0, [Validators.required, Validators.min(1)]],
+      width: [0, [Validators.required, Validators.min(1)]],
+      height: [0, [Validators.required, Validators.min(1)]],
+      unit: new FormControl<DimensionUnit>(DimensionUnit.Centimeters, Validators.required),
     }),
     materials: this.fb.array([this.createMaterialGroup()]),
   });
@@ -142,10 +142,10 @@ export class ArtworkFormComponent implements OnInit {
       weightCategory: artwork.weightCategory,
       status: artwork.status,
       dimensions: {
-        dimL: artwork.dimensions.length,
-        dimW: artwork.dimensions.width,
-        dimH: artwork.dimensions.height,
-        dimUnit: artwork.dimensions.unit,
+        length: artwork.dimensions.length,
+        width: artwork.dimensions.width,
+        height: artwork.dimensions.height,
+        unit: artwork.dimensions.unit,
       }
     });
 
@@ -191,20 +191,20 @@ export class ArtworkFormComponent implements OnInit {
     return this.form.get('materials') as FormArray;
   }
 
-  get dimL(): FormControl {
-    return this.dimensionsGroup.get('dimL') as FormControl;
+  get length(): FormControl {
+    return this.dimensionsGroup.get('length') as FormControl;
   }
 
-  get dimW(): FormControl {
-    return this.dimensionsGroup.get('dimW') as FormControl;
+  get width(): FormControl {
+    return this.dimensionsGroup.get('width') as FormControl;
   }
 
-  get dimH(): FormControl {
-    return this.dimensionsGroup.get('dimH') as FormControl;
+  get height(): FormControl {
+    return this.dimensionsGroup.get('height') as FormControl;
   }
 
-  get dimUnit(): FormControl {
-    return this.dimensionsGroup.get('dimUnit') as FormControl;
+  get unit(): FormControl {
+    return this.dimensionsGroup.get('unit') as FormControl;
   }
 
   get status(): FormControl {
@@ -239,10 +239,10 @@ export class ArtworkFormComponent implements OnInit {
       status: 'Draft',
       weightCategory: WeightCategory.Light,
       dimensions: {
-        dimL: 0,
-        dimW: 0,
-        dimH: 0,
-        dimUnit: DimensionUnit.Centimeters,
+        length: 0,
+        width: 0,
+        height: 0,
+        unit: DimensionUnit.Centimeters,
       },
     });
 

@@ -3,9 +3,8 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MaterialListViewModel, MaterialMapper} from '../mappers/material.mapper';
-import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
-import {MaterialFormComponent} from './components/form/material-form';
+import {MaterialFormComponent} from './components/form/material-form.component';
 import {filter, take} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -13,6 +12,7 @@ import {toObservable} from '@angular/core/rxjs-interop';
 import {ArtworksEmptyStateComponent} from '../../../../../shared/components/empty-state/empty-state.component';
 import {MaterialsTableComponent} from './components/material-table/material-table.component';
 import {MaterialStore} from '../../../application/store/material/material.store';
+import {ArtworkDashboardHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 
 @Component({
   selector: 'lajemacarts-material-page',
@@ -22,8 +22,8 @@ import {MaterialStore} from '../../../application/store/material/material.store'
     MatButton,
     MatIcon,
     MaterialsTableComponent,
-    PageHeaderComponent,
-    SearchTextFilterComponent
+    SearchTextFilterComponent,
+    ArtworkDashboardHeaderComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

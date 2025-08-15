@@ -6,12 +6,12 @@ import {Router} from '@angular/router';
 import {filter, take} from 'rxjs';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {ArtworkListViewModel, ArtworkMapper} from '../mappers/artwork.mapper';
 import {ArtworksTableComponent} from './components/artwork-table/artwork-table.component';
 import {ArtworkFilters, ArtworksFiltersComponent} from './components/filter/filter.component';
 import {ArtworksEmptyStateComponent} from '../../../../../shared/components/empty-state/empty-state.component';
 import {ArtworkStore} from '../../../application/store/artwork/artwork.store';
+import {ArtworkDashboardHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 
 @Component({
   selector: 'lajemacarts-artworks-page',
@@ -22,7 +22,7 @@ import {ArtworkStore} from '../../../application/store/artwork/artwork.store';
     ArtworksEmptyStateComponent,
     MatButton,
     MatIcon,
-    PageHeaderComponent
+    ArtworkDashboardHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -70,8 +70,7 @@ import {ArtworkStore} from '../../../application/store/artwork/artwork.store';
 
           <div class="results-info">
             <div class="results-summary">
-              <p>
-                Affichage de {{ store.filteredCount() }} sur {{ store.totalArtworks() }} œuvres
+              <p>Affichage de {{ store.filteredCount() }} sur {{ store.totalArtworks() }} œuvres
                 @if (store.hasActiveFilters()) {
                   <button mat-button class="clear-filters-btn" (click)="store.clearFilters()">
                     <mat-icon>clear</mat-icon>
@@ -81,7 +80,7 @@ import {ArtworkStore} from '../../../application/store/artwork/artwork.store';
               </p>
             </div>
             <div class="statistics">
-              <p>Valeur totale : {{ statistics().formattedTotalValue }}</p>
+              <p>Valeur totale : {{ statistics().formattedTotalValue }}</p><br>
               <p>Prix moyen : {{ statistics().formattedAveragePrice }}</p>
             </div>
           </div>

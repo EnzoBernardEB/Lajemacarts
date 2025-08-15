@@ -47,42 +47,42 @@
     <legend>Dimensions</legend>
     <mat-form-field>
       <mat-label>Longueur</mat-label>
-      <input matInput type="number" formControlName="dimL" required>
-      @if (dimL.hasError('required') && dimL.touched) {
+      <input matInput type="number" formControlName="length" required>
+      @if (length.hasError('required') && length.touched) {
         <mat-error>Requis</mat-error>
       }
-      @if (dimL.hasError('min') && dimL.touched) {
+      @if (length.hasError('min') && length.touched) {
         <mat-error>Doit être > 0</mat-error>
       }
     </mat-form-field>
     <mat-form-field>
       <mat-label>Largeur</mat-label>
-      <input matInput type="number" formControlName="dimW" required>
-      @if (dimW.hasError('required') && dimW.touched) {
+      <input matInput type="number" formControlName="width" required>
+      @if (width.hasError('required') && width.touched) {
         <mat-error>Requis</mat-error>
       }
-      @if (dimW.hasError('min') && dimW.touched) {
+      @if (width.hasError('min') && width.touched) {
         <mat-error>Doit être > 0</mat-error>
       }
     </mat-form-field>
     <mat-form-field>
       <mat-label>Hauteur</mat-label>
-      <input matInput type="number" formControlName="dimH" required>
-      @if (dimH.hasError('required') && dimH.touched) {
+      <input matInput type="number" formControlName="height" required>
+      @if (height.hasError('required') && height.touched) {
         <mat-error>Requis</mat-error>
       }
-      @if (dimH.hasError('min') && dimH.touched) {
+      @if (height.hasError('min') && height.touched) {
         <mat-error>Doit être > 0</mat-error>
       }
     </mat-form-field>
     <mat-form-field>
       <mat-label>Unité</mat-label>
-      <mat-select formControlName="dimUnit" required>
+      <mat-select formControlName="unit" required>
         @for (unit of dimensionUnits; track unit) {
           <mat-option [value]="unit">{{ unit }}</mat-option>
         }
       </mat-select>
-      @if (dimUnit.hasError('required') && dimUnit.touched) {
+      @if (unit.hasError('required') && unit.touched) {
         <mat-error>Requis</mat-error>
       }
     </mat-form-field>

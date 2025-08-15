@@ -21,7 +21,6 @@ export const ArtworkStore = signalStore(
       store.totalArtworks() > 0 && store.filteredEntities().length === 0
     ),
     filteredArtworks: computed(() => store.filteredEntities()),
-    filteredCount: computed(() => store.filteredEntities().length),
   })),
   withArtworkCrud()
 );

@@ -8,7 +8,7 @@ import {ArtworkTypeListViewModel} from '../../../mappers/artwork-type.mapper';
 
 @Component({
   selector: 'lajemacarts-artwork-types-table',
-  standalone: true,
+
   imports: [
     MatTableModule,
     MatIconModule,

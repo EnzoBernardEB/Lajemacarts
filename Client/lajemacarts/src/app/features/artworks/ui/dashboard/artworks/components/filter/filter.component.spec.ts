@@ -1,139 +1,115 @@
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {provideNoopAnimations} from '@angular/platform-browser/animations';
 import {HarnessLoader} from '@angular/cdk/testing';
+import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
 import {MatSelectHarness} from '@angular/material/select/testing';
 import {MatInputHarness} from '@angular/material/input/testing';
 import {MatButtonHarness} from '@angular/material/button/testing';
-import {Component, input} from '@angular/core';
-import {MatFormFieldHarness} from '@angular/material/form-field/testing';
-import {ArtworkFilters, ArtworksFiltersComponent, ArtworkStatusOption, ArtworkTypeOption} from './filter.component';
+import {ArtworksFiltersComponent, ArtworkStatusOption, ArtworkTypeOption} from './filter.component';
 
+const MOCK_ARTWORK_TYPE_OPTIONS: ArtworkTypeOption[] = [
+  {id: '1', name: 'Peinture Acrylique'},
+  {id: '2', name: 'Sculpture'},
+];
 
-@Component({
-  standalone: true,
-  imports: [ArtworksFiltersComponent],
-  template: `
-    <lajemacarts-artworks-filters
-      [filters]="filters()"
-      [artworkTypeOptions]="artworkTypeOptions()"
-      [statusOptions]="statusOptions()"
-    />
-  `,
-})
-class TestHostComponent {
-  filters = input.required<ArtworkFilters>();
-  artworkTypeOptions = input<ArtworkTypeOption[]>([]);
-  statusOptions = input<ArtworkStatusOption[]>([]);
-}
+const MOCK_STATUS_OPTIONS: ArtworkStatusOption[] = [
+  {id: 'InStock', label: 'En stock'},
+  {id: 'Sold', label: 'Vendu'},
+];
 
 describe('ArtworksFiltersComponent', () => {
-  let fixture: ComponentFixture<TestHostComponent>;
   let component: ArtworksFiltersComponent;
+  let fixture: ComponentFixture<ArtworksFiltersComponent>;
   let loader: HarnessLoader;
-
-  const MOCK_STATUS_OPTIONS: ArtworkStatusOption[] = [
-    {id: 'Draft', label: 'Brouillon'},
-    {id: 'InStock', label: 'En Stock'},
-  ];
-  const MOCK_TYPE_OPTIONS: ArtworkTypeOption[] = [
-    {id: 'type-1', name: 'Sculpture'},
-    {id: 'type-2', name: 'Vase'},
-  ];
-  const INITIAL_FILTERS: ArtworkFilters = {search: null, status: null, artworkType: null};
-
-  const renderComponent = async (filters: ArtworkFilters = INITIAL_FILTERS) => {
-    fixture = TestBed.createComponent(TestHostComponent);
-    fixture.componentRef.setInput('filters', filters);
-    fixture.componentRef.setInput('statusOptions', MOCK_STATUS_OPTIONS);
-    fixture.componentRef.setInput('artworkTypeOptions', MOCK_TYPE_OPTIONS);
-
-    fixture.detectChanges();
-    component = fixture.debugElement.children[0].componentInstance;
-    loader = TestbedHarnessEnvironment.loader(fixture);
-  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ArtworksFiltersComponent, TestHostComponent],
+      imports: [ArtworksFiltersComponent],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
+
+    fixture = TestBed.createComponent(ArtworksFiltersComponent);
+    component = fixture.componentInstance;
+    loader = TestbedHarnessEnvironment.loader(fixture);
+    fixture.componentRef.setInput('artworkTypeOptions', MOCK_ARTWORK_TYPE_OPTIONS);
+    fixture.componentRef.setInput('statusOptions', MOCK_STATUS_OPTIONS);
+    
+    jest.useFakeTimers();
   });
 
-  describe('User Interaction & Outputs', () => {
-    it('should emit searchFilterChange with a debounce when user types in search field', fakeAsync(async () => {
-      await renderComponent();
-      const searchFilterChangeSpy = jest.fn();
-      component.searchFilterChange.subscribe(searchFilterChangeSpy);
-
-      const searchInput = await loader.getHarness(MatInputHarness.with({placeholder: 'Nom, description, type...'}));
-      await searchInput.setValue('test');
-
-      expect(searchFilterChangeSpy).not.toHaveBeenCalled();
-
-      tick(300);
-
-      expect(searchFilterChangeSpy).toHaveBeenCalledWith('test');
-      expect(searchFilterChangeSpy).toHaveBeenCalledTimes(1);
-    }));
-
-    it('should emit statusFilterChange when user selects a status', async () => {
-      await renderComponent();
-      const statusFilterChangeSpy = jest.fn();
-      component.statusFilterChange.subscribe(statusFilterChangeSpy);
-
-      const statusFormField = await loader.getHarness(MatFormFieldHarness.with({floatingLabelText: 'Statut'}));
-      const statusSelect = await statusFormField.getControl(MatSelectHarness);
-
-      await statusSelect!.open();
-      await statusSelect!.clickOptions({text: 'En Stock'});
-
-      expect(statusFilterChangeSpy).toHaveBeenCalledWith('InStock');
-      expect(statusFilterChangeSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should emit artworkTypeFilterChange when user selects an artwork type', async () => {
-      await renderComponent();
-      const artworkTypeFilterChangeSpy = jest.fn();
-      component.artworkTypeFilterChange.subscribe(artworkTypeFilterChangeSpy);
-
-      const typeFormField = await loader.getHarness(MatFormFieldHarness.with({floatingLabelText: 'Type d\'œuvre'}));
-      const typeSelect = await typeFormField.getControl(MatSelectHarness);
-
-      await typeSelect!.open();
-      await typeSelect!.clickOptions({text: 'Sculpture'});
-
-      expect(artworkTypeFilterChangeSpy).toHaveBeenCalledWith('type-1');
-      expect(artworkTypeFilterChangeSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should emit clearFilters when user clicks the clear button', async () => {
-      await renderComponent({search: 'active', status: null, artworkType: null});
-      const clearFiltersSpy = jest.fn();
-      component.clearFilters.subscribe(clearFiltersSpy);
-
-      const clearButton = await loader.getHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
-      await clearButton.click();
-
-      expect(clearFiltersSpy).toHaveBeenCalledTimes(1);
-    });
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
-  describe('Conditional Rendering', () => {
-    it('should NOT show the clear button when no filters are active', async () => {
-      await renderComponent(INITIAL_FILTERS);
-      const clearButton = await loader.getAllHarnesses(MatButtonHarness.with({text: /Effacer les filtres/}));
-      expect(clearButton.length).toBe(0);
-    });
+  it('should create', () => {
+    fixture.componentRef.setInput('filters', {search: null, status: null, artworkType: null});
+    fixture.detectChanges();
+    expect(component).toBeTruthy();
+  });
 
-    it('should show the clear button when a search filter is active', async () => {
-      await renderComponent({search: 'test', status: null, artworkType: null});
-      const clearButton = await loader.getHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
-      expect(clearButton).toBeDefined();
-    });
+  it('should emit artworkTypeFilterChange when an artwork type is selected', async () => {
+    fixture.componentRef.setInput('filters', {search: null, status: null, artworkType: null});
+    fixture.detectChanges();
 
-    it('should show the clear button when a status filter is active', async () => {
-      await renderComponent({search: null, status: 'InStock', artworkType: null});
-      const clearButton = await loader.getHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
-      expect(clearButton).toBeDefined();
-    });
+    const artworkTypeFilterChangeSpy = jest.spyOn(component.artworkTypeFilterChange, 'emit');
+    const select = await loader.getHarness(MatSelectHarness.with({label: "Type d'œuvre"}));
+
+    await select.open();
+    await select.clickOptions({text: 'Peinture Acrylique'});
+
+    expect(artworkTypeFilterChangeSpy).toHaveBeenCalledWith('1');
+  });
+
+  it('should emit statusFilterChange when a status is selected', async () => {
+    fixture.componentRef.setInput('filters', {search: null, status: null, artworkType: null});
+    fixture.detectChanges();
+
+    const statusFilterChangeSpy = jest.spyOn(component.statusFilterChange, 'emit');
+    const select = await loader.getHarness(MatSelectHarness.with({label: 'Statut'}));
+
+    await select.open();
+    await select.clickOptions({text: 'En stock'});
+
+    expect(statusFilterChangeSpy).toHaveBeenCalledWith('InStock');
+  });
+
+  it('should emit searchFilterChange with debounce when search input changes', async () => {
+    fixture.componentRef.setInput('filters', {search: null, status: null, artworkType: null});
+    fixture.detectChanges();
+
+    const searchFilterChangeSpy = jest.spyOn(component.searchFilterChange, 'emit');
+    const input = await loader.getHarness(MatInputHarness.with({label: 'Rechercher une œuvre'}));
+
+    await input.setValue('test search');
+
+    expect(searchFilterChangeSpy).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(300);
+
+    expect(searchFilterChangeSpy).toHaveBeenCalledWith('test search');
+  });
+
+  it('should show clear button only when filters are active', async () => {
+    fixture.componentRef.setInput('filters', {search: null, status: null, artworkType: null});
+    fixture.detectChanges();
+    let hasButton = await loader.hasHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
+    expect(hasButton).toBe(false);
+
+    fixture.componentRef.setInput('filters', {search: 'test', status: null, artworkType: null});
+    fixture.detectChanges();
+    hasButton = await loader.hasHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
+    expect(hasButton).toBe(true);
+  });
+
+  it('should emit clearFilters when clear button is clicked', async () => {
+    fixture.componentRef.setInput('filters', {search: 'test', status: null, artworkType: null});
+    fixture.detectChanges();
+
+    const clearFiltersSpy = jest.spyOn(component.clearFilters, 'emit');
+    const button = await loader.getHarness(MatButtonHarness.with({text: /Effacer les filtres/}));
+
+    await button.click();
+
+    expect(clearFiltersSpy).toHaveBeenCalled();
   });
 });

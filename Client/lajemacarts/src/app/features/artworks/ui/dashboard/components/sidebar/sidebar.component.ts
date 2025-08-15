@@ -1,14 +1,16 @@
 import {Component} from '@angular/core';
 import {MatIcon} from '@angular/material/icon';
-import {MatListItem, MatNavList} from '@angular/material/list';
+import {MatListItem, MatListItemIcon, MatListItemTitle, MatNavList} from '@angular/material/list';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 
 @Component({
   selector: 'lajemacarts-sidebar',
   imports: [
-    MatIcon,
-    MatListItem,
     MatNavList,
+    MatIcon,
+    MatListItemIcon,
+    MatListItemTitle,
+    MatListItem,
     RouterLink,
     RouterLinkActive
   ],

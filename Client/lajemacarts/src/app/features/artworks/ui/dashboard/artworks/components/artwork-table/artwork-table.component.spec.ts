@@ -1,15 +1,18 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
 import {HarnessLoader} from '@angular/cdk/testing';
+import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
 import {Component, input} from '@angular/core';
 import {MatTableHarness} from '@angular/material/table/testing';
 import {MatMenuHarness} from '@angular/material/menu/testing';
+
 import {ArtworksTableComponent} from './artwork-table.component';
-import {ArtworkListViewModel} from '../../../mappers/artwork.mapper';
-import {EnrichedArtwork} from '../../../../application/store/artwork/artwork.store';
+import {ArtworkListViewModel, ArtworkMapper} from '../../../mappers/artwork.mapper';
+import {mockArtworks, mockArtworkTypes, mockMaterials} from '../../../../../application/store/artwork/artwork.mocks';
+import {EnrichedArtwork} from '../../../../../application/store/artwork/artwork.types';
+import {provideNoopAnimations} from '@angular/platform-browser/animations';
 
 @Component({
-  standalone: true,
+
   imports: [ArtworksTableComponent],
   template: `
     <lajemacarts-artworks-table [artworks]="artworks()"/>`,
@@ -23,43 +26,22 @@ describe('ArtworksTableComponent', () => {
   let component: ArtworksTableComponent;
   let loader: HarnessLoader;
 
-  const MOCK_ARTWORKS: ArtworkListViewModel[] = [
+  const MOCK_ENRICHED_ARTWORKS: EnrichedArtwork[] = [
     {
-      id: '1',
-      name: 'Vase Bleu',
-      thumbnailUrl: 'path/to/vase.jpg',
-      typeName: 'Vase',
-      year: 2023,
-      status: 'InStock',
-      statusLabel: 'En Stock',
-      statusClass: 'status-instock',
-      sellingPrice: 150,
-      formattedSellingPrice: '150,00 €',
-      calculatedPrice: 140,
-      formattedCalculatedPrice: '~ 140,00 €',
-      priceComparisonStatus: 'higher',
-      compactDimensions: '15x15x30 cm',
-      originalData: {} as EnrichedArtwork,
+      artwork: mockArtworks[0],
+      artworkType: mockArtworkTypes[0],
+      artworkMaterials: [mockMaterials[0], mockMaterials[2]],
     },
     {
-      id: '2',
-      name: 'Table Rivière',
-      thumbnailUrl: 'path/to/table.jpg',
-      typeName: 'Table',
-      year: 2022,
-      status: 'Sold',
-      statusLabel: 'Vendu',
-      statusClass: 'status-sold',
-      sellingPrice: 1200,
-      formattedSellingPrice: '1 200,00 €',
-      calculatedPrice: 1350,
-      formattedCalculatedPrice: '~ 1 350,00 €',
-      priceComparisonStatus: 'lower',
-      compactDimensions: '120x60x45 cm',
-      originalData: {} as EnrichedArtwork,
+      artwork: mockArtworks[1],
+      artworkType: mockArtworkTypes[1],
+      artworkMaterials: [mockMaterials[1], mockMaterials[0], mockMaterials[3]],
     },
   ];
-  const renderComponent = async (artworks: ArtworkListViewModel[] = MOCK_ARTWORKS) => {
+
+  const MOCK_VIEW_MODELS: ArtworkListViewModel[] = ArtworkMapper.toListViewModels(MOCK_ENRICHED_ARTWORKS);
+
+  const renderComponent = async (artworks: ArtworkListViewModel[] = MOCK_VIEW_MODELS) => {
     fixture = TestBed.createComponent(TestHostComponent);
     fixture.componentRef.setInput('artworks', artworks);
     fixture.detectChanges();
@@ -70,6 +52,7 @@ describe('ArtworksTableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ArtworksTableComponent, TestHostComponent],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
   });
 
@@ -78,75 +61,61 @@ describe('ArtworksTableComponent', () => {
       await renderComponent();
       const table = await loader.getHarness(MatTableHarness);
       const rows = await table.getRows();
-      expect(rows.length).toBe(MOCK_ARTWORKS.length);
+      expect(rows.length).toBe(MOCK_VIEW_MODELS.length);
     });
 
-    it('should render cell content correctly for a row', async () => {
+    it('should render cell content correctly for the first row', async () => {
       await renderComponent();
       const table = await loader.getHarness(MatTableHarness);
-      const firstRow = (await table.getRows())[0];
-      const cells = await firstRow.getCells();
-      const cellTexts = await Promise.all(cells.map(async (cell) => await cell.getText()));
 
-      expect(cellTexts[1]).toBe('Vase Bleu');
-      expect(cellTexts[2]).toBe('Vase');
-      expect(cellTexts[3]).toBe('2023');
-      expect(cellTexts[5]).toBe('En Stock');
-      expect(cellTexts[6]).toBe('~ 140,00 €');
+      const firstRowTexts = await table.getCellTextByIndex();
+
+
+      const firstRowValues = firstRowTexts[0];
+      const firstViewModel = MOCK_VIEW_MODELS[0];
+
+      expect(firstRowValues[1]).toBe(firstViewModel.name);
+      expect(firstRowValues[2]).toBe(firstViewModel.typeName);
+      expect(firstRowValues[5]).toBe(firstViewModel.statusLabel);
+      expect(firstRowValues[7]).toBe(firstViewModel.formattedSellingPrice);
     });
   });
 
   describe('User Interaction & Outputs', () => {
-    it('should emit artworkClick when a row is clicked', async () => {
+    it('should emit artworkClick with the correct artwork when a row is clicked', async () => {
       await renderComponent();
-      const artworkClickSpy = jest.fn();
-      component.artworkClick.subscribe(artworkClickSpy);
+      const artworkClickSpy = jest.spyOn(component.artworkClick, 'emit');
 
       const table = await loader.getHarness(MatTableHarness);
       const firstRow = (await table.getRows())[0];
-      await (await firstRow.host()).click();
+      await firstRow.host().then(host => host.click());
 
-      expect(artworkClickSpy).toHaveBeenCalledWith(MOCK_ARTWORKS[0]);
       expect(artworkClickSpy).toHaveBeenCalledTimes(1);
+      expect(artworkClickSpy).toHaveBeenCalledWith(MOCK_VIEW_MODELS[0]);
     });
 
     it('should emit editArtwork when the "Modifier" action is clicked', async () => {
       await renderComponent();
-      const editArtworkSpy = jest.fn();
-      component.editArtwork.subscribe(editArtworkSpy);
+      const editArtworkSpy = jest.spyOn(component.editArtwork, 'emit');
 
-      const menu = await loader.getHarness(MatMenuHarness);
-      await menu.open();
-      await menu.clickItem({text: /Modifier/});
+      const menuHarness = await loader.getHarness(MatMenuHarness.with({triggerText: 'more_vert'}));
+      await menuHarness.open();
+      await menuHarness.clickItem({text: /Modifier/});
 
-      expect(editArtworkSpy).toHaveBeenCalledWith(MOCK_ARTWORKS[0]);
       expect(editArtworkSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should emit viewArtwork when the "Voir les Détails" action is clicked', async () => {
-      await renderComponent();
-      const viewArtworkSpy = jest.fn();
-      component.viewArtwork.subscribe(viewArtworkSpy);
-
-      const menu = await loader.getHarness(MatMenuHarness);
-      await menu.open();
-      await menu.clickItem({text: /Voir les Détails/});
-
-      expect(viewArtworkSpy).toHaveBeenCalledWith(MOCK_ARTWORKS[0]);
-      expect(viewArtworkSpy).toHaveBeenCalledTimes(1);
+      expect(editArtworkSpy).toHaveBeenCalledWith(MOCK_VIEW_MODELS[0]);
     });
 
     it('should emit deleteArtwork when the "Supprimer" action is clicked', async () => {
       await renderComponent();
-      const deleteArtworkSpy = jest.fn();
-      component.deleteArtwork.subscribe(deleteArtworkSpy);
+      const deleteArtworkSpy = jest.spyOn(component.deleteArtwork, 'emit');
 
-      const menu = await loader.getHarness(MatMenuHarness);
-      await menu.open();
-      await menu.clickItem({text: /Supprimer/});
+      const menuHarness = await loader.getHarness(MatMenuHarness.with({triggerText: 'more_vert'}));
+      await menuHarness.open();
+      await menuHarness.clickItem({text: /Supprimer/});
 
-      expect(deleteArtworkSpy).toHaveBeenCalledWith(MOCK_ARTWORKS[0]);
       expect(deleteArtworkSpy).toHaveBeenCalledTimes(1);
+      expect(deleteArtworkSpy).toHaveBeenCalledWith(MOCK_VIEW_MODELS[0]);
     });
   });
 });

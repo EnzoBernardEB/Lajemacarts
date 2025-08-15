@@ -24,7 +24,6 @@ import {
 
 @Component({
   selector: 'lajemacarts-artwork-form-page',
-  standalone: true,
   imports: [ArtworkFormComponent, MediaUploadComponent],
   template: `
     <div class="form-container">
@@ -46,7 +45,6 @@ import {
         </section>
       </main>
     </div>`,
-  providers: [ArtworkStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ArtworkFormPage implements OnInit {

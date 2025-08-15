@@ -1,14 +1,14 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
-import { HarnessLoader } from '@angular/cdk/testing';
-import { Component, input } from '@angular/core';
-import { MatTableHarness } from '@angular/material/table/testing';
-import { MatMenuHarness } from '@angular/material/menu/testing';
-import { ArtworkTypesTableComponent } from './artwork-type-table.component';
-import { ArtworkTypeListViewModel } from '../../../mappers/artwork-type.mapper';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {TestbedHarnessEnvironment} from '@angular/cdk/testing/testbed';
+import {HarnessLoader} from '@angular/cdk/testing';
+import {Component, input} from '@angular/core';
+import {MatTableHarness} from '@angular/material/table/testing';
+import {MatMenuHarness} from '@angular/material/menu/testing';
+import {ArtworkTypesTableComponent} from './artwork-type-table.component';
+import {ArtworkTypeListViewModel} from '../../../mappers/artwork-type.mapper';
 
 @Component({
-  standalone: true,
+
   imports: [ArtworkTypesTableComponent],
   template: `<lajemacarts-artwork-types-table [artworkTypes]="artworkTypes()" />`,
 })
@@ -82,11 +82,11 @@ describe('ArtworkTypesTableComponent', () => {
 
       const table = await loader.getHarness(MatTableHarness);
       const firstRow = (await table.getRows())[0];
-      const actionsCell = (await firstRow.getCells({ columnName: 'actions' }))[0];
+      const actionsCell = (await firstRow.getCells({columnName: 'actions'}))[0];
       const menuHarness = await actionsCell.getHarness(MatMenuHarness);
 
       await menuHarness.open();
-      await menuHarness.clickItem({ text: /Modifier/ });
+      await menuHarness.clickItem({text: /Modifier/});
 
       expect(editArtworkTypeSpy).toHaveBeenCalledWith(MOCK_ARTWORK_TYPES[0]);
       expect(editArtworkTypeSpy).toHaveBeenCalledTimes(1);
@@ -99,11 +99,11 @@ describe('ArtworkTypesTableComponent', () => {
 
       const table = await loader.getHarness(MatTableHarness);
       const firstRow = (await table.getRows())[0];
-      const actionsCell = (await firstRow.getCells({ columnName: 'actions' }))[0];
+      const actionsCell = (await firstRow.getCells({columnName: 'actions'}))[0];
       const menuHarness = await actionsCell.getHarness(MatMenuHarness);
 
       await menuHarness.open();
-      await menuHarness.clickItem({ text: /Supprimer/ });
+      await menuHarness.clickItem({text: /Supprimer/});
 
       expect(deleteArtworkTypeSpy).toHaveBeenCalledWith(MOCK_ARTWORK_TYPES[0]);
       expect(deleteArtworkTypeSpy).toHaveBeenCalledTimes(1);

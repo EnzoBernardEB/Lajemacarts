@@ -2,7 +2,6 @@ import {ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit} 
 import {MatProgressSpinner} from '@angular/material/progress-spinner';
 import {ArtworkTypesTableComponent} from './components/artwork-type-table/artwork-type-table.component';
 import {ArtworkTypeListViewModel, ArtworkTypeMapper} from '../mappers/artwork-type.mapper';
-import {PageHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 import {SearchTextFilterComponent} from '../components/filter/search-text-filter.component';
 import {ArtworkTypeFormComponent} from './components/form/artwork-type-form';
 import {MatDialog} from '@angular/material/dialog';
@@ -10,15 +9,16 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {filter, take} from 'rxjs';
 import {ArtworkTypeStore} from '../../../application/store/artwork-type/artwork-type.store';
+import {ArtworkDashboardHeaderComponent} from '../components/header/artwork-dashboard-header.component';
 
 @Component({
   selector: 'lajemacarts-artwork-types-page',
-  standalone: true,
+
   imports: [
     ArtworkTypesTableComponent,
     MatProgressSpinner,
-    PageHeaderComponent,
     SearchTextFilterComponent,
+    ArtworkDashboardHeaderComponent,
 
   ],
   providers: [ArtworkTypeStore],

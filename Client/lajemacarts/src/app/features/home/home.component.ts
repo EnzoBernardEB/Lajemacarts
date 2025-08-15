@@ -4,7 +4,6 @@ import {MatButton} from '@angular/material/button';
 
 @Component({
   selector: 'lajemacarts-home',
-  standalone: true,
   imports: [
     RouterLink,
     MatButton

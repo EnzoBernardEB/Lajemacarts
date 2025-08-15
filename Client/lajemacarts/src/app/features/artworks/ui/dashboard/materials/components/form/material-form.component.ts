@@ -1,17 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MaterialListViewModel } from '../../../mappers/material.mapper';
+import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatButtonModule} from '@angular/material/button';
+import {MaterialListViewModel} from '../../../mappers/material.mapper';
 
 @Component({
   selector: 'lajemacarts-material-form',
   standalone: true,
-  imports: [ ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule ],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles:`
+  styles: `
     :host {
       mat-dialog-content {
         display: flex;
@@ -72,11 +72,16 @@ import { MaterialListViewModel } from '../../../mappers/material.mapper';
 export class MaterialFormComponent {
   private readonly fb = inject(FormBuilder);
   public readonly dialogRef = inject(MatDialogRef<MaterialFormComponent>);
-  public readonly data: MaterialListViewModel & { pricePerUnit: number } | null = inject(MAT_DIALOG_DATA, { optional: true });
+  public readonly data: MaterialListViewModel & {
+    pricePerUnit: number
+  } | null = inject(MAT_DIALOG_DATA, {optional: true});
 
   public readonly form = this.fb.group({
     name: [this.data?.name ?? '', [Validators.required, Validators.minLength(3)]],
-    pricePerUnit: [this.data?.pricePerUnit ?? 0, [Validators.required, Validators.min(0.01)]],
+    pricePerUnit: new FormControl<number | null>(this.data?.pricePerUnit ?? 0, [
+      Validators.required,
+      Validators.min(0.01)
+    ]),
     unit: [this.data?.unit ?? '', [Validators.required, Validators.minLength(1)]],
   });
 
@@ -84,8 +89,8 @@ export class MaterialFormComponent {
     return this.form.get('name') as FormControl<string>;
   }
 
-  get pricePerUnit(): FormControl<number> {
-    return this.form.get('pricePerUnit') as FormControl<number>;
+  get pricePerUnit(): FormControl<number | null> {
+    return this.form.get('pricePerUnit') as FormControl<number | null>;
   }
 
   get unit(): FormControl<string> {
@@ -93,7 +98,10 @@ export class MaterialFormComponent {
   }
 
 
-  onCancel(): void { this.dialogRef.close(); }
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+
   onSave(): void {
     if (this.form.valid) {
       this.dialogRef.close(this.form.getRawValue());

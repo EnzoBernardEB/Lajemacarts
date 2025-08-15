@@ -1,43 +1,55 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatButtonModule} from '@angular/material/button';
-import {MatIconModule} from '@angular/material/icon';
 import {By} from '@angular/platform-browser';
-import {PageHeaderComponent} from './artwork-dashboard-header.component';
+import {ArtworkDashboardHeaderComponent} from './artwork-dashboard-header.component';
 
-describe('ArtworksHeaderComponent', () => {
-  let component: PageHeaderComponent;
-  let fixture: ComponentFixture<PageHeaderComponent>;
-
-  const renderComponent = (): void => {
-    fixture = TestBed.createComponent(PageHeaderComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  };
-
-  const clickAddButton = (): void => {
-    const button = fixture.debugElement.query(By.css('button'));
-    button?.nativeElement?.click();
-  };
+describe('ArtworkDashboardHeaderComponent', () => {
+  let component: ArtworkDashboardHeaderComponent;
+  let fixture: ComponentFixture<ArtworkDashboardHeaderComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [
-        PageHeaderComponent,
-        MatButtonModule,
-        MatIconModule,
-      ]
+      imports: [ArtworkDashboardHeaderComponent],
+      providers: [],
     }).compileComponents();
+
+    fixture = TestBed.createComponent(ArtworkDashboardHeaderComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  describe('User interaction', () => {
-    it('should notify parent when user clicks add button', () => {
-      const addClickedSpy = jest.fn();
-      renderComponent();
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
 
-      component.addClicked.subscribe(addClickedSpy);
-      clickAddButton();
+  it('should display default title and button text on initialization', () => {
+    const titleElement = fixture.debugElement.query(By.css('h1')).nativeElement;
+    const buttonElement = fixture.debugElement.query(By.css('button')).nativeElement;
 
-      expect(addClickedSpy).toHaveBeenCalledTimes(1);
-    });
+    expect(titleElement.textContent).toContain('Titre de la Page');
+    expect(buttonElement.textContent).toContain('Ajouter');
+  });
+
+  it('should display the provided title and button text from inputs', () => {
+    const newTitle = 'Ma Galerie d\'Œuvres';
+    const newButtonText = 'Créer une œuvre';
+    fixture.componentRef.setInput('title', newTitle);
+    fixture.componentRef.setInput('addButtonText', newButtonText);
+
+    fixture.detectChanges();
+
+    const titleElement = fixture.debugElement.query(By.css('h1')).nativeElement;
+    const buttonElement = fixture.debugElement.query(By.css('button')).nativeElement;
+
+    expect(titleElement.textContent).toContain(newTitle);
+    expect(buttonElement.textContent).toContain(newButtonText);
+  });
+
+  it('should emit addClicked event when the button is clicked', () => {
+    const addClickedSpy = jest.spyOn(component.addClicked, 'emit');
+    const buttonElement = fixture.debugElement.query(By.css('button.add-item-btn'));
+
+    buttonElement.triggerEventHandler('click', null);
+
+    expect(addClickedSpy).toHaveBeenCalledTimes(1);
   });
 });

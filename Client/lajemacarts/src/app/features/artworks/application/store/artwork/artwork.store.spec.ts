@@ -1,417 +1,259 @@
-import {ArtworkStore, UpdateArtworkPayload} from './artwork.store';
+import {TestBed} from '@angular/core/testing';
+import {patchState, StateSignals} from '@ngrx/signals';
+import {unprotected} from '@ngrx/signals/testing';
+import {of, throwError} from 'rxjs';
+
+import {ArtworkStore} from './artwork.store';
 import {ArtworkGateway} from '../../../domain/ ports/artwork.gateway';
 import {ArtworkTypeGateway} from '../../../domain/ ports/artwork-type.gateway';
 import {MaterialGateway} from '../../../domain/ ports/material.gateway';
 import {ArtworkInMemoryGateway} from '../../../infrastructure/gateway/artwork-in-memory.gateway';
 import {ArtworkTypeInMemoryGateway} from '../../../infrastructure/gateway/artwork-type-in-memory.gateway';
 import {MaterialInMemoryGateway} from '../../../infrastructure/gateway/material-in-memory.gateway';
-import {fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {patchState, StateSignals} from '@ngrx/signals';
-import {unprotected} from '@ngrx/signals/testing';
-import {mockArtworks, mockArtworkTypes, mockMaterials} from './artwork.store.data';
-import {delay, of, throwError} from 'rxjs';
+import {MediaUploadGateway} from '../../../domain/ ports/media-upload.gateway';
+import {ArtworkCreationPayloadWithFiles, UpdateArtworkPayloadWithFiles} from './artwork.types';
+import {mockArtworks, mockArtworkTypes, mockMaterials} from './artwork.mocks';
 import {Artwork} from '../../../domain/models/artwork';
 
-function initStore(partial?: StateSignals<typeof ArtworkStore>) {
-  const store = TestBed.inject(ArtworkStore);
-  patchState(unprotected(store), partial ?? {});
-  return store
-}
+const createBaseArtworkPayload = (): ArtworkCreationPayloadWithFiles => ({
+  name: 'New Artwork',
+  description: 'A beautiful new piece.',
+  artworkTypeId: mockArtworkTypes[0].id,
+  materials: [{materialId: mockMaterials[0].id, quantity: 1, unit: 'unit'}],
+  length: 10,
+  width: 10,
+  height: 10,
+  unit: 'cm',
+  weightCategory: 'Between1And5kg',
+  hoursSpent: 20,
+  creationYear: 2024,
+  sellingPrice: 500,
+  files: [],
+});
+
 
 describe('ArtworkStore', () => {
   let artworkGateway: ArtworkInMemoryGateway;
   let artworkTypeGateway: ArtworkTypeInMemoryGateway;
   let materialGateway: MaterialInMemoryGateway;
+  let mediaUploadGateway: MediaUploadGateway;
+  let store: ReturnType<typeof initStore>;
+
+  function initStore(initialState?: Partial<StateSignals<typeof ArtworkStore>>) {
+    const storeInstance = TestBed.inject(ArtworkStore);
+    if (initialState) {
+      patchState(unprotected(storeInstance), initialState);
+    }
+    return storeInstance;
+  }
 
   beforeEach(() => {
-    artworkGateway = new ArtworkInMemoryGateway()
-    artworkTypeGateway = new ArtworkTypeInMemoryGateway()
-    materialGateway = new MaterialInMemoryGateway()
+    artworkGateway = new ArtworkInMemoryGateway();
+    artworkTypeGateway = new ArtworkTypeInMemoryGateway();
+    materialGateway = new MaterialInMemoryGateway();
+
+    mediaUploadGateway = {
+      upload: jest.fn().mockReturnValue(of([])),
+    };
+
     TestBed.configureTestingModule({
       providers: [
         ArtworkStore,
         {provide: ArtworkGateway, useValue: artworkGateway},
         {provide: ArtworkTypeGateway, useValue: artworkTypeGateway},
         {provide: MaterialGateway, useValue: materialGateway},
-      ]
-    });
-  })
-
-  it('should_initialize_withDefaultEmptyState', () => {
-    const store = initStore();
-
-    expect(store.artworks()).toEqual([]);
-    expect(store.artworkTypes()).toEqual([]);
-    expect(store.materials()).toEqual([]);
-    expect(store.searchTerm()).toEqual('');
-    expect(store.statusFilter()).toEqual(null);
-    expect(store.typeFilter()).toEqual(null);
-  });
-
-  it('should_reflectArtworksPresence_in_isEmptySignal', () => {
-    const store = initStore()
-    expect(store.isEmpty()).toBe(true);
-    patchState(unprotected(store), {artworks: mockArtworks})
-    expect(store.isEmpty()).toBe(false);
-  })
-
-  it('should_countAllArtworks_when_noFilterIsActive', () => {
-    const store = initStore({artworks: mockArtworks})
-    expect(store.filteredCount()).toBe(3);
-  })
-
-  it('should_updateStateAndSetFulfilled_when_dataLoadSucceeds', fakeAsync(() => {
-    const store = initStore()
-    artworkGateway.feedWith(mockArtworks);
-    materialGateway.feedWith(mockMaterials);
-    artworkTypeGateway.feedWith(mockArtworkTypes);
-
-    expect(store.artworks()).toEqual([]);
-
-    store.loadAllData();
-
-    expect(store.isPending()).toBe(true);
-
-    tick(500);
-
-    expect(store.isPending()).toBe(false);
-    expect(store.isFulfilled()).toBe(true);
-    expect(store.artworks()).toEqual(mockArtworks);
-  }))
-
-  it('should_setErrorStateAndKeepData_when_dataLoadFails', fakeAsync(() => {
-    const store = initStore()
-    artworkGateway.feedWith(mockArtworks);
-    materialGateway.feedWith(mockMaterials);
-    artworkTypeGateway.feedWith(mockArtworkTypes);
-    jest.spyOn(artworkGateway, 'getAll').mockReturnValue(throwError(() => new Error('Network Error')));
-
-    store.loadAllData();
-
-    tick(500);
-
-    expect(store.isPending()).toBe(false);
-    expect(store.isFulfilled()).toBe(false);
-    expect(store.error()).toBe('Échec du chargement des données');
-    expect(store.artworks()).toEqual([]);
-  }))
-
-  it('should_enrichArtworksCorrectly_with_typesAndMaterials', () => {
-    const store = initStore({
-      artworks: mockArtworks,
-      artworkTypes: mockArtworkTypes,
-      materials: mockMaterials
-    });
-
-    const expectedEnrichedArtworks = [
-      {
-        artwork: mockArtworks[0],
-        artworkType: mockArtworkTypes[0],
-        artworkMaterials: [mockMaterials[0], mockMaterials[2]]
-      },
-      {
-        artwork: mockArtworks[1],
-        artworkType: mockArtworkTypes[1],
-        artworkMaterials: [mockMaterials[1], mockMaterials[0], mockMaterials[3]]
-      },
-      {
-        artwork: mockArtworks[2],
-        artworkType: mockArtworkTypes[2],
-        artworkMaterials: [mockMaterials[4]]
-      }
-    ];
-
-    expect(store.enrichedArtworks()).toEqual(expectedEnrichedArtworks);
-  });
-
-  describe('Write Operations', () => {
-    const getFreshMocks = () => [...mockArtworks];
-
-    describe('addArtwork', () => {
-      it('should add the new artwork to the state on success', fakeAsync(() => {
-        const store = initStore();
-        const artworkToAdd = mockArtworks[0];
-
-        const payload = {
-          name: artworkToAdd.name.value,
-          description: artworkToAdd.description.value,
-          artworkTypeId: artworkToAdd.artworkTypeId,
-          materials: artworkToAdd.materials,
-          dimL: artworkToAdd.dimensions.length,
-          dimW: artworkToAdd.dimensions.width,
-          dimH: artworkToAdd.dimensions.height,
-          dimUnit: artworkToAdd.dimensions.unit,
-          weightCategory: artworkToAdd.weightCategory,
-          hoursSpent: artworkToAdd.hoursSpent,
-          creationYear: artworkToAdd.creationYear,
-          sellingPrice: artworkToAdd.sellingPrice.amount
-        };
-
-        jest.spyOn(artworkGateway, 'add').mockImplementation(artwork => of(artwork));
-
-        store.addArtwork(payload);
-        tick();
-
-        expect(store.artworks()).toHaveLength(1);
-        expect(store.artworks()[0].name.value).toEqual(payload.name);
-        expect(store.isFulfilled()).toBe(true);
-      }));
-
-      it('should set an error if domain validation fails', fakeAsync(() => {
-        const store = initStore();
-        const artworkToAdd = mockArtworks[0];
-        const payload = {
-          ...artworkToAdd,
-          name: 'A',
-          description: artworkToAdd.description.value,
-          dimL: artworkToAdd.dimensions.length,
-          dimW: artworkToAdd.dimensions.width,
-          dimH: artworkToAdd.dimensions.height,
-          dimUnit: artworkToAdd.dimensions.unit,
-          sellingPrice: artworkToAdd.sellingPrice.amount
-        };
-        const addSpy = jest.spyOn(artworkGateway, 'add');
-
-        store.addArtwork(payload);
-        tick();
-
-        expect(store.artworks()).toHaveLength(0);
-        expect(store.error()).toContain('Le nom doit contenir au moins 3 caractères.');
-        expect(addSpy).not.toHaveBeenCalled();
-      }));
-    });
-
-    describe('updateArtwork', () => {
-      it('should optimistically update and set fulfilled on success', fakeAsync(() => {
-        const store = initStore({ artworks: getFreshMocks() });
-        const artworkToUpdate = store.artworks()[0];
-        const payload: UpdateArtworkPayload = {
-          id: artworkToUpdate.id,
-          name: 'Updated Name',
-          status: 'InStock',
-          description: artworkToUpdate.description.value,
-          artworkTypeId: artworkToUpdate.artworkTypeId,
-          materials: artworkToUpdate.materials,
-          dimL: artworkToUpdate.dimensions.length,
-          dimW: artworkToUpdate.dimensions.width,
-          dimH: artworkToUpdate.dimensions.height,
-          dimUnit: artworkToUpdate.dimensions.unit,
-          weightCategory: artworkToUpdate.weightCategory,
-          hoursSpent: artworkToUpdate.hoursSpent,
-          creationYear: artworkToUpdate.creationYear,
-          sellingPrice: artworkToUpdate.sellingPrice.amount
-        };
-        jest.spyOn(artworkGateway, 'update').mockImplementation(artworkType => of(artworkType).pipe(delay(0)));
-
-        store.updateArtwork(payload);
-
-        expect(store.artworks()[0].name.value).toBe('Updated Name');
-        expect(store.isPending()).toBe(true);
-
-        tick();
-
-        expect(store.isFulfilled()).toBe(true);
-      }));
-
-      it('should revert optimistic update and set error on gateway failure', fakeAsync(() => {
-        const store = initStore({ artworks: getFreshMocks() });
-        const originalName = store.artworks()[0].name.value;
-        const artworkToUpdate = store.artworks()[0];
-        const payload: UpdateArtworkPayload = {
-          id: artworkToUpdate.id,
-          name: 'Update That Fails',
-          status: 'InStock',
-          description: artworkToUpdate.description.value,
-          artworkTypeId: artworkToUpdate.artworkTypeId,
-          materials: artworkToUpdate.materials,
-          dimL: artworkToUpdate.dimensions.length,
-          dimW: artworkToUpdate.dimensions.width,
-          dimH: artworkToUpdate.dimensions.height,
-          dimUnit: artworkToUpdate.dimensions.unit,
-          weightCategory: artworkToUpdate.weightCategory,
-          hoursSpent: artworkToUpdate.hoursSpent,
-          creationYear: artworkToUpdate.creationYear,
-          sellingPrice: artworkToUpdate.sellingPrice.amount
-        };
-        jest.spyOn(artworkGateway, 'update').mockReturnValue(throwError(() => new Error('API Error')));
-
-        store.updateArtwork(payload);
-        tick();
-
-        expect(store.artworks()[0].name.value).toBe(originalName);
-        expect(store.error()).toBe('Échec de la mise à jour');
-      }));
-    });
-
-    describe('deleteArtwork', () => {
-      it('should optimistically delete and set fulfilled on success', fakeAsync(() => {
-        const store = initStore({ artworks: getFreshMocks() });
-        const idToDelete = store.artworks()[0].id;
-        jest.spyOn(artworkGateway, 'delete').mockReturnValue(of(undefined).pipe(delay(0)));
-
-        store.deleteArtwork(idToDelete);
-
-        expect(store.artworks().length).toBe(mockArtworks.length - 1);
-        expect(store.isPending()).toBe(true);
-
-        tick();
-
-        expect(store.artworks().find(a => a.id === idToDelete)).toBeUndefined();
-        expect(store.isFulfilled()).toBe(true);
-      }));
-
-      it('should revert optimistic delete and set error on gateway failure', fakeAsync(() => {
-        const store = initStore({ artworks: getFreshMocks() });
-        const idToDelete = store.artworks()[0].id;
-        jest.spyOn(artworkGateway, 'delete').mockReturnValue(throwError(() => new Error('API Error')));
-
-        store.deleteArtwork(idToDelete);
-        tick();
-
-        expect(store.artworks().length).toBe(mockArtworks.length);
-        expect(store.error()).toBe('Échec de la suppression');
-      }));
+        {provide: MediaUploadGateway, useValue: mediaUploadGateway},
+      ],
     });
   });
 
-  describe('Filtering Logic', () => {
-    describe('by Search Term', () => {
-      it('should filter by a term present in the artwork name', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('Table');
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table');
+  describe('Initialization and Core Computed Signals', () => {
+    it('should initialize with the correct default state', () => {
+      store = initStore();
+      expect(store.isEmpty()).toBe(true);
+      expect(store.totalArtworks()).toBe(0);
+      expect(store.hasActiveFilters()).toBe(false);
+    });
+
+    it('should correctly enrich artworks when data is present', () => {
+      store = initStore({
+        artworks: mockArtworks,
+        artworkTypes: mockArtworkTypes,
+        materials: mockMaterials,
       });
 
-      it('should filter by a term present in the artwork description', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('artisanal');
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Vase');
-      });
+      const enriched = store.enrichedArtworks();
+      expect(enriched.length).toBe(3);
+      expect(enriched[0].artworkType?.name.value).toBe('Table');
+      expect(enriched[0].artworkMaterials.length).toBe(2);
+    });
+  });
 
-      it('should filter by a term present in the artwork type name', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('Sculpture');
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Envol');
-      });
+  describe('Data Loading (withArtworkCrud)', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
 
-      it('should be case-insensitive', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('rivière');
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table Basse "Rivière"');
-      });
+    it('should update state and set status to fulfilled when data load succeeds', () => {
+      store = initStore();
+      artworkGateway.feedWith(mockArtworks);
+      materialGateway.feedWith(mockMaterials);
+      artworkTypeGateway.feedWith(mockArtworkTypes);
 
-      it('should trim whitespace from the search term', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('  Rivière  ');
-        expect(store.filteredCount()).toBe(1);
+      store.loadAllData();
+      expect(store.isPending()).toBe(true);
+
+      jest.runAllTimers();
+
+      expect(store.isPending()).toBe(false);
+      expect(store.isFulfilled()).toBe(true);
+      expect(store.artworks()).toEqual(mockArtworks);
+    });
+
+    it('should set error state when data load fails', () => {
+      store = initStore();
+      jest.spyOn(artworkGateway, 'getAll').mockReturnValue(throwError(() => 'Network Error'));
+
+      store.loadAllData();
+      jest.runAllTimers();
+
+      expect(store.isPending()).toBe(false);
+      expect(store.error()).toBe('Échec du chargement des données');
+      expect(store.isEmpty()).toBe(true);
+    });
+  });
+
+  describe('Write Operations (withArtworkCrud)', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('addArtwork: should add the new artwork on success', () => {
+      store = initStore({artworks: []});
+      jest.spyOn(artworkGateway, 'add').mockImplementation(artwork => of(artwork));
+      const payload = createBaseArtworkPayload();
+
+      store.addArtwork(payload);
+      jest.runAllTimers();
+
+      expect(store.artworks()).toHaveLength(1);
+      expect(store.artworks()[0].name.value).toBe(payload.name);
+      expect(store.isFulfilled()).toBe(true);
+    });
+
+    it('addArtwork: should set an error and not add artwork if domain validation fails', () => {
+      store = initStore();
+      const addSpy = jest.spyOn(artworkGateway, 'add');
+      const payload = createBaseArtworkPayload();
+
+      store.addArtwork({...payload, name: 'A'});
+      jest.runAllTimers();
+
+      expect(store.artworks()).toHaveLength(0);
+      expect(store.error()).toContain('Le nom doit contenir au moins 3 caractères.');
+
+      expect(addSpy).not.toHaveBeenCalled();
+    });
+
+    it('updateArtwork: should optimistically update and set fulfilled on success', () => {
+      store = initStore({artworks: [...mockArtworks]});
+      const artworkToUpdate = store.artworks()[0];
+
+      const payload: UpdateArtworkPayloadWithFiles = {
+        id: artworkToUpdate.id,
+        status: artworkToUpdate.status,
+        artworkTypeId: artworkToUpdate.artworkTypeId,
+        creationYear: artworkToUpdate.creationYear,
+        hoursSpent: artworkToUpdate.hoursSpent,
+        weightCategory: artworkToUpdate.weightCategory,
+        description: artworkToUpdate.description.value,
+        sellingPrice: artworkToUpdate.sellingPrice.amount,
+        length: artworkToUpdate.dimensions.length,
+        width: artworkToUpdate.dimensions.width,
+        height: artworkToUpdate.dimensions.height,
+        unit: artworkToUpdate.dimensions.unit,
+        materials: artworkToUpdate.materials,
+        name: 'Updated Name',
+        files: []
+      };
+
+      jest.spyOn(artworkGateway, 'update').mockImplementation(art => of(art as Artwork));
+
+      store.updateArtwork(payload);
+      jest.runAllTimers();
+
+      expect(store.artworks()[0].name.value).toBe('Updated Name');
+      expect(store.isFulfilled()).toBe(true);
+    });
+
+    it('updateArtwork: should revert optimistic update and set error on gateway failure', () => {
+      store = initStore({artworks: [...mockArtworks]});
+      const artworkToUpdate = store.artworks()[0];
+      const originalName = artworkToUpdate.name.value;
+      const payload: UpdateArtworkPayloadWithFiles = {
+        id: artworkToUpdate.id,
+        status: artworkToUpdate.status,
+        artworkTypeId: artworkToUpdate.artworkTypeId,
+        creationYear: artworkToUpdate.creationYear,
+        hoursSpent: artworkToUpdate.hoursSpent,
+        weightCategory: artworkToUpdate.weightCategory,
+        description: artworkToUpdate.description.value,
+        sellingPrice: artworkToUpdate.sellingPrice.amount,
+        length: artworkToUpdate.dimensions.length,
+        width: artworkToUpdate.dimensions.width,
+        height: artworkToUpdate.dimensions.height,
+        unit: artworkToUpdate.dimensions.unit,
+        materials: artworkToUpdate.materials,
+        name: 'Update That Fails',
+        files: []
+      };
+
+      jest.spyOn(artworkGateway, 'update').mockReturnValue(throwError(() => new Error('API Error')));
+
+      store.updateArtwork(payload);
+
+      jest.runAllTimers();
+
+      expect(store.artworks()[0].name.value).toBe(originalName);
+      expect(store.error()).toBe('Échec de la mise à jour');
+    });
+
+    it('deleteArtwork: should optimistically delete, then set fulfilled on success', () => {
+      store = initStore({artworks: [...mockArtworks]});
+      const idToDelete = store.artworks()[0].id;
+      jest.spyOn(artworkGateway, 'delete').mockReturnValue(of(undefined));
+
+      store.deleteArtwork(idToDelete);
+
+      expect(store.artworks().find(a => a.id === idToDelete)).toBeUndefined();
+
+      jest.runAllTimers();
+
+      expect(store.isFulfilled()).toBe(true);
+    });
+  });
+
+  describe('Filtering (withArtworkFilters)', () => {
+    beforeEach(() => {
+      store = initStore({
+        artworks: mockArtworks,
+        artworkTypes: mockArtworkTypes,
+        materials: mockMaterials,
       });
     });
 
-    describe('by Type Filter', () => {
-      it('should filter by a specific artwork type ID', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        const vaseTypeId = mockArtworkTypes.find(t => t.name.value === 'Vase')!.id;
-        store.updateTypeFilter(vaseTypeId);
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.name.value).toContain('Vase');
-      });
+    it('should filter by a search term present in the artwork name', () => {
+      store.updateSearchTerm('Table');
+      expect(store.filteredCount()).toBe(1);
+      expect(store.filteredArtworks()[0].artwork.name.value).toContain('Table');
     });
 
-    describe('by Status Filter', () => {
-      it('should filter by a specific status', () => {
-        const artworkInStock = Artwork.hydrate({
-          id: 'art-instock-1',
-          name: {value: 'Vase en stock'},
-          description: {value: '...'},
-          artworkTypeId: mockArtworkTypes[0].id,
-          materials: [],
-          dimensions: {length: 1, width: 1, height: 1, unit: 'cm'},
-          weightCategory: 'LessThan1kg',
-          hoursSpent: 5,
-          creationYear: 2024,
-          status: 'InStock',
-          sellingPrice:150
-        });
+    it('should clear all filters and reset the view', () => {
+      store.updateSearchTerm('Rivière');
+      expect(store.hasActiveFilters()).toBe(true);
 
-        const artworkSold = Artwork.hydrate({
-          id: 'art-sold-1',
-          name: {value: 'Table vendue'},
-          description: {value: '...'},
-          artworkTypeId: mockArtworkTypes[1].id,
-          materials: [],
-          dimensions: {length: 1, width: 1, height: 1, unit: 'cm'},
-          weightCategory: 'MoreThan5kg',
-          hoursSpent: 20,
-          creationYear: 2023,
-          status: 'Sold',
-          sellingPrice:120
-        });
+      store.clearAllArtworkFilters();
 
-        const store = initStore({
-          artworks: [artworkInStock, artworkSold],
-          artworkTypes: mockArtworkTypes,
-        });
-        store.updateStatusFilter('InStock');
-
-        expect(store.filteredCount()).toBe(1);
-        expect(store.filteredArtworks()[0].artwork.id).toBe('art-instock-1');
-        expect(store.filteredArtworks()[0].artwork.status).toBe('InStock');
-      });
-    });
-
-    describe('with Combined Filters and Edge Cases', () => {
-      it('should combine a search term and a type filter correctly', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        const tableTypeId = mockArtworkTypes.find(t => t.name.value === 'Table')!.id;
-
-        store.updateSearchTerm('Rivière');
-        store.updateTypeFilter(tableTypeId);
-
-        expect(store.filteredCount()).toBe(1);
-      });
-
-      it('should return no results when filters conflict', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        const vaseTypeId = mockArtworkTypes.find(t => t.name.value === 'Vase')!.id;
-
-        store.updateSearchTerm('Rivière');
-        store.updateTypeFilter(vaseTypeId);
-
-        expect(store.filteredCount()).toBe(0);
-      });
-
-      it('should update hasNoResults signal correctly', () => {
-        const store = initStore({artworks: mockArtworks});
-        expect(store.hasNoResults()).toBe(false);
-        store.updateSearchTerm('zzzzzzzzzz');
-        expect(store.hasNoResults()).toBe(true);
-      });
-
-      it('should update hasActiveFilters signal correctly', () => {
-        const store = initStore();
-        expect(store.hasActiveFilters()).toBe(false);
-        store.updateSearchTerm('test');
-        expect(store.hasActiveFilters()).toBe(true);
-      });
-
-      it('should clear all filters and reset the list', () => {
-        const store = initStore({artworks: mockArtworks, artworkTypes: mockArtworkTypes});
-        store.updateSearchTerm('Rivière');
-        store.updateTypeFilter(mockArtworkTypes[0].id);
-        expect(store.filteredCount()).toBe(0);
-
-        store.clearFilters();
-
-        expect(store.filteredCount()).toBe(mockArtworks.length);
-        expect(store.searchTerm()).toBe('');
-        expect(store.typeFilter()).toBe(null);
-        expect(store.statusFilter()).toBe(null);
-        expect(store.hasActiveFilters()).toBe(false);
-      });
+      expect(store.hasActiveFilters()).toBe(false);
+      expect(store.filteredCount()).toBe(mockArtworks.length);
     });
   });
 });

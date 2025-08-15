@@ -5,6 +5,7 @@ import {HttpClient} from '@angular/common/http';
 import {ArtworkGateway} from '../../domain/ ports/artwork.gateway';
 import {API_URL} from "../../../../core/api-url.token";
 import {ArtworkDto} from '../dtos/artwork.dto';
+import {ArtworkMedia, ArtworkMediaProps} from '../../domain/models/value-objects/artwork-media';
 
 export class ArtworkHttpGateway extends ArtworkGateway {
   override delete(id: string): Observable<void> {
@@ -36,7 +37,13 @@ export class ArtworkHttpGateway extends ArtworkGateway {
       creationYear: artwork.creationYear,
       status: artwork.status,
       sellingPrice: artwork.sellingPrice.amount,
-      medias: artwork.medias
+      medias: artwork.medias.map(
+        (media: ArtworkMedia): ArtworkMediaProps => ({
+          url: media.url,
+          type: media.type,
+          title: media.title
+        })
+      ),
     };
   }
 

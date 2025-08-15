@@ -4,7 +4,7 @@ import {RouterOutlet} from '@angular/router';
 
 @Component({
   selector: 'lajemacarts-gallery-layout',
-  standalone: true,
+
   imports: [
     CommonModule,
     RouterOutlet,
@@ -56,5 +56,5 @@ import {RouterOutlet} from '@angular/router';
   `
 })
 export class GalleryLayoutComponent {
-  
+
 }

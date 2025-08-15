@@ -8,7 +8,7 @@ import {ArtworkTypeListViewModel} from '../../../mappers/artwork-type.mapper';
 
 @Component({
   selector: 'lajemacarts-artwork-type-form',
-  standalone: true,
+
   imports: [
     ReactiveFormsModule,
     MatDialogModule,
@@ -74,6 +74,7 @@ export class ArtworkTypeFormComponent {
     basePrice: [this.data?.basePrice ?? 0, [Validators.required, Validators.min(1)]],
     profitMultiplier: [this.data?.profitMultiplier ?? 1, [Validators.required, Validators.min(1)]],
   });
+
   get name(): FormControl<string> {
     return this.form.get('name') as FormControl<string>;
   }

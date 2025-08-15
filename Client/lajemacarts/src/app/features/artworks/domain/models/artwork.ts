@@ -31,10 +31,10 @@ interface CreateArtworkProps {
   description: string;
   artworkTypeId: string;
   materials: { materialId: string; unit: string; quantity: number }[];
-  dimL: number;
-  dimW: number;
-  dimH: number;
-  dimUnit: DimensionUnit;
+  length: number;
+  width: number;
+  height: number;
+  unit: DimensionUnit;
   weightCategory: WeightCategory;
   hoursSpent: number;
   creationYear: number;
@@ -47,10 +47,10 @@ interface ArtworkUpdateProps {
   description: string;
   artworkTypeId: string;
   materials: ArtworkMaterial[];
-  dimL: number;
-  dimW: number;
-  dimH: number;
-  dimUnit: DimensionUnit;
+  length: number;
+  width: number;
+  height: number;
+  unit: DimensionUnit;
   weightCategory: WeightCategory;
   hoursSpent: number;
   creationYear: number;
@@ -112,7 +112,7 @@ export class Artwork {
   public static create(props: CreateArtworkProps): Result<Artwork> {
     const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
-    const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
+    const dimensionsResult = Dimensions.create(props.length, props.width, props.height, props.unit);
     const materialResults = props.materials.map(m => ArtworkMaterial.create(m.materialId, m.unit, m.quantity));
     const sellingPriceResult = Money.create(props.sellingPrice);
     const mediaResults = props.medias.map((m: ArtworkMediaProps) => ArtworkMedia.create(m));
@@ -152,7 +152,7 @@ export class Artwork {
   public update(props: ArtworkUpdateProps): Result<Artwork> {
     const nameResult = Name.create(props.name);
     const descriptionResult = ArtworkDescription.create(props.description);
-    const dimensionsResult = Dimensions.create(props.dimL, props.dimW, props.dimH, props.dimUnit);
+    const dimensionsResult = Dimensions.create(props.length, props.width, props.height, props.unit);
     const sellingPriceResult = Money.create(props.sellingPrice);
     const mediaResults = props.medias.map(m => ArtworkMedia.create(m));
 
