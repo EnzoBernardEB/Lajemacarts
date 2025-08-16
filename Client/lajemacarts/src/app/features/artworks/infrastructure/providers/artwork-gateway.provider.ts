@@ -70,7 +70,7 @@ const ARTWORKS_DATA: Artwork[] = [
     artworkTypeId: ARTWORK_TYPES_DATA[0].id,
     materials: [
       {materialId: MATERIALS_DATA[0].id, unit: MATERIALS_DATA[0].unit, quantity: 3},
-      {materialId: MATERIALS_DATA[2].id, unit: MATERIALS_DATA[2].unit, quantity: 0.5}
+      {materialId: MATERIALS_DATA[2].id, unit: MATERIALS_DATA[2].unit, quantity: 1.5}
     ],
     length: 15,
     width: 15,
@@ -88,7 +88,7 @@ const ARTWORKS_DATA: Artwork[] = [
     description: 'Table en bois de chêne massif avec une coulée de résine époxy bleue.',
     artworkTypeId: ARTWORK_TYPES_DATA[2].id,
     materials: [
-      {materialId: MATERIALS_DATA[1].id, unit: MATERIALS_DATA[1].unit, quantity: 0.72},
+      {materialId: MATERIALS_DATA[1].id, unit: MATERIALS_DATA[1].unit, quantity: 1.72},
       {materialId: MATERIALS_DATA[3].id, unit: MATERIALS_DATA[4].unit, quantity: 2}
     ],
     length: 120,
@@ -108,7 +108,7 @@ const ARTWORKS_DATA: Artwork[] = [
     artworkTypeId: ARTWORK_TYPES_DATA[1].id,
     materials: [
       {materialId: MATERIALS_DATA[4].id, unit: MATERIALS_DATA[4].unit, quantity: 4},
-      {materialId: MATERIALS_DATA[2].id, unit: MATERIALS_DATA[2].unit, quantity: 0.5}
+      {materialId: MATERIALS_DATA[2].id, unit: MATERIALS_DATA[2].unit, quantity: 1.5}
     ],
     length: 40,
     width: 20,

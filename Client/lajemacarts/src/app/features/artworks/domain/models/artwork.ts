@@ -42,6 +42,7 @@ interface CreateArtworkProps {
   medias: ArtworkMediaProps[]
 }
 
+
 interface ArtworkUpdateProps {
   name: string;
   description: string;

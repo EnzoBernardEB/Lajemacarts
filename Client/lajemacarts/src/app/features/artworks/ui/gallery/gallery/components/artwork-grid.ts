@@ -7,6 +7,7 @@ import {ArtworkListViewModel} from '../../../dashboard/mappers/artwork.mapper';
 
 @Component({
   selector: 'lajemacarts-artwork-grid',
+  standalone: true,
   imports: [
     NgOptimizedImage,
     MatCardModule,
@@ -20,6 +21,7 @@ import {ArtworkListViewModel} from '../../../dashboard/mappers/artwork.mapper';
           <mat-card-header>
             <mat-card-title>{{ artwork.name }}</mat-card-title>
             <mat-card-subtitle>{{ artwork.year }}</mat-card-subtitle>
+            <mat-card-subtitle class="artwork-price">{{ artwork.formattedSellingPrice }}</mat-card-subtitle>
           </mat-card-header>
           <div class="artwork-image-wrapper">
             <img
@@ -35,10 +37,6 @@ import {ArtworkListViewModel} from '../../../dashboard/mappers/artwork.mapper';
               <mat-chip [class]="artwork.statusClass" class="status-chip" aria-label="Statut">
                 {{ artwork.statusLabel }}
               </mat-chip>
-              <span class="dimensions">
-                  <mat-icon>straighten</mat-icon>
-                {{ artwork.compactDimensions }}
-                </span>
             </div>
           </mat-card-content>
         </mat-card>

@@ -30,6 +30,13 @@
   .mat-mdc-card-header {
     padding-bottom: 8px;
   }
+
+  .artwork-price {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-top: 4px;
+  }
 }
 
 .artwork-image-wrapper {
